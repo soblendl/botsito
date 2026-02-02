@@ -1,0 +1,31 @@
+import axios from 'axios';
+import { styleText } from '../lib/utils.js';
+
+export default {
+    commands: ['sora'],
+    execute: async (ctx) => {
+        const text = ctx.args.join(' ');
+
+        if (!text) {
+            await ctx.reply(styleText('ꕤ Uso: /sora <descripción del video>\n\nEjemplo: /sora un gato volando en el espacio'));
+            return;
+        }
+
+        try {
+            const encodedText = encodeURIComponent(text);
+            const apiUrl = `https://mayapi.ooguy.com/ai-sora?q=${encodedText}&apikey=may-4363eca0`;
+            const response = await axios.get(apiUrl, { timeout: 120000 })
+            if (response.data?.status && response.data?.video) {
+                const videoUrl = response.data.video
+                await ctx.replyWithVideo(videoUrl, { caption: styleText(`ꕥ *Video generado con Sora AI*\n\n✎ Prompt: ${text}`) })
+            } else { await ctx.reply(styleText('ꕤ No se pudo generar el video. Intenta con otro prompt.')) }
+        } catch (error) {
+            console.error('Error en Sora AI:', error.message)
+            if (error.code === 'ECONNABORTED') {
+                await ctx.reply(styleText('ꕤ El video está tardando demasiado. Intenta con un prompt más simple.'));
+            } else {
+                await ctx.reply(styleText('ꕤ Error al generar el video. Intenta más tarde.'));
+            }
+        }
+    }
+};

@@ -1,0 +1,2 @@
+import { jadibotManager } from '../../services/external/jadibot.js';import { styleText } from '../../utils/helpers.js';export default {    commands: ['cancelarbot', 'stopbot'],    async execute(ctx) {        const { sender } = ctx;        const userId = sender.includes('@') ? sender : `${sender}@s.whatsapp.net`;        const result = jadibotManager.stopSubbot(userId);        await ctx.reply(styleText(result.message));    }};
+

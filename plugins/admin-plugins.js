@@ -1,0 +1,59 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { styleText } from '../lib/utils.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export default {
+    commands: ['plugins', 'getplugin'],
+    tags: ['owner'],
+    help: ['plugins', 'getplugin <nombre>'],
+
+    async execute(ctx) {
+        const { args, command, reply, sender } = ctx;
+        const ownerNumber = '573115434166';
+        if (!sender.includes(ownerNumber)) {
+            return await reply(styleText('ꕤ Solo el owner puede usar este comando.'));
+        }
+        if (command === 'plugins') {
+            try {
+                const files = fs.readdirSync(__dirname).filter(file => file.endsWith('.js'));
+                const total = files.length;
+                let text = `ꕥ *Lista de Plugins* (${total})\n\n`;
+                files.sort().forEach((file, index) => {
+                    text += `> ${index + 1}. ${file}\n`;
+                });
+                text += `\n> Usa */getplugin <nombre>* para obtener el archivo.`;
+                return await reply(styleText(text));
+            } catch (error) {
+                console.error(error);
+                return await reply(styleText('ꕤ Error al leer la carpeta de plugins.'));
+            }
+        }
+        if (command === 'getplugin') {
+            if (!args[0]) {
+                return await reply(styleText('ꕤ Ingresa el nombre del plugin.\n> Ejemplo: */getplugin admin-test.js*'));
+            }
+            let pluginName = args[0];
+            if (!pluginName.endsWith('.js')) pluginName += '.js';
+            const filePath = path.join(__dirname, pluginName);
+            if (!fs.existsSync(filePath)) {
+                return await reply(styleText(`❌ El plugin *${pluginName}* no existe.`));
+            }
+            try {
+                const fileContent = fs.readFileSync(filePath);
+                await ctx.bot.sendMessage(ctx.chatId, {
+                    document: fileContent,
+                    mimetype: 'text/javascript',
+                    fileName: pluginName,
+                    caption: styleText(`ꕥ *Plugin:* ${pluginName}`)
+                }, { quoted: ctx.msg });
+            } catch (error) {
+                console.error(error);
+                return await reply(styleText('❌ Error al enviar el archivo.'));
+            }
+        }
+    }
+};

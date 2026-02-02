@@ -1,0 +1,1 @@
+export const CLOUDFLARE_CONFIG = {    ACCOUNT_ID: 'TU_ACCOUNT_ID_AQUI',    API_TOKEN: 'TU_API_TOKEN_AQUI',    VISION_MODEL: '@cf/llava-hf/llava-1.6-34b',    MAX_TOKENS: 512,    TEMPERATURE: 0.7};export default CLOUDFLARE_CONFIG;

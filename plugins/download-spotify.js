@@ -1,0 +1,93 @@
+import fetch from "node-fetch";
+import fs from "fs";
+import path from "path";
+import { styleText } from '../lib/utils.js';
+
+async function searchSong(query) {
+    const res = await fetch(
+        `https://spotdown.org/api/song-details?url=${encodeURIComponent(query)}`,
+        {
+            headers: {
+                "Accept": "application/json, text/plain, */*"
+            }
+        }
+    );
+
+    if (!res.ok) {
+        throw new Error("API request failed");
+    }
+
+    const data = await res.json();
+
+    if (!data.songs || data.songs.length === 0) {
+        throw new Error("No se encontraron canciones");
+    }
+
+    return data.songs[0];
+}
+
+async function downloadSong(songUrl, outputPath) {
+    const res = await fetch("https://spotdown.org/api/download", {
+        method: "POST",
+        headers: {
+            "Accept": "application/json, text/plain, */*",
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ url: songUrl })
+    });
+
+    if (!res.ok || !res.body) {
+        throw new Error("Error en la descarga");
+    }
+
+    const fileStream = fs.createWriteStream(outputPath);
+
+    await new Promise((resolve, reject) => {
+        res.body.pipe(fileStream);
+        res.body.on("error", reject);
+        fileStream.on("finish", resolve);
+    });
+}
+
+export default {
+    commands: ['sp', 'spotifydl', 'spot'],
+    tags: ['download'],
+    help: ['sp <url|canción>'],
+
+    async execute(ctx) {
+        const { bot, chatId, args, reply } = ctx;
+        const query = args.join(' ');
+
+        if (!query) {
+            return await reply(styleText('ꕤ Ingresa el link o nombre de la canción.'));
+        }
+
+        try {
+            const song = await searchSong(query);
+            const fileName = `spotify_${Date.now()}.mp3`;
+            const outputPath = path.resolve('./tmp', fileName);
+            await downloadSong(song.url, outputPath);
+            if (!fs.existsSync(outputPath)) {
+                throw new Error('No se pudo guardar el archivo');
+            }
+            const caption = styleText(
+                `*SPOTIFY DOWNLOAD* \n\n` +
+                `> ᰔᩚ Título » ${song.title}\n` +
+                `> ❀ Artista » ${song.artist}\n` +
+                `> ⚝ Duración » ${song.duration || 'N/A'}\n\n` +
+                `> ⤷ ゛Powered By DeltaByteˎˊ˗`
+            );
+
+            await bot.sock.sendMessage(chatId, {
+                audio: { url: outputPath },
+                mimetype: 'audio/mpeg',
+                fileName: `${song.title}.mp3`,
+                caption: caption
+            }, { quoted: ctx.msg });
+            fs.unlinkSync(outputPath);
+        } catch (error) {
+            console.error('[Spotify] Error:', error);
+            await reply(styleText(`ꕤ Error: ${error.message}`));
+        }
+    }
+};

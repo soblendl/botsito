@@ -1,0 +1,61 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { styleText } from '../lib/utils.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export default {
+    commands: ['backup', 'dbbackup'],
+    tags: ['owner'],
+    help: ['backup (envía copia de DB)'],
+
+    async execute(ctx) {
+        const { reply, sender, dbService } = ctx;
+
+        // Verificar Owner
+        const ownerNumber = '573115434166';
+        if (!sender.includes(ownerNumber)) {
+            return await reply(styleText('⛔ Solo el owner puede usar este comando.'));
+        }
+
+        try {
+            await reply(styleText('ꕥ Generando backup de base de datos... 📦'));
+
+            // Forzar guardado antes del backup
+            await dbService.save();
+
+            const dbPath = path.join(__dirname, '..', 'database');
+            const files = ['users.json', 'groups.json', 'gacha.json', 'tokens.json'];
+
+            let sentCount = 0;
+
+            for (const file of files) {
+                const filePath = path.join(dbPath, file);
+                if (fs.existsSync(filePath)) {
+                    const fileContent = fs.readFileSync(filePath);
+
+                    await ctx.bot.sendMessage(ctx.chatId, {
+                        document: fileContent,
+                        mimetype: 'application/json',
+                        fileName: `BACKUP_${Date.now()}_${file}`,
+                        caption: styleText(`ꕥ *Backup:* ${file}`)
+                    }, { quoted: ctx.msg });
+
+                    sentCount++;
+                }
+            }
+
+            if (sentCount === 0) {
+                await reply(styleText('⚠️ No se encontraron archivos de base de datos para enviar.'));
+            } else {
+                await reply(styleText(`✅ Backup completado (${sentCount} archivos).`));
+            }
+
+        } catch (error) {
+            console.error('Backup Error:', error);
+            await reply(styleText('❌ Error al generar el backup.'));
+        }
+    }
+};
