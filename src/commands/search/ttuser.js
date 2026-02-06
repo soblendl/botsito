@@ -46,7 +46,7 @@ export default {
 
         if (!username) {
             return await reply(styleText(
-                `ꕤ *Uso del Comando*\n\n` +
+                `ꕢ *Uso del Comando*\n\n` +
                 `> */ttuser* <username>\n\n` +
                 `*Ejemplo:*\n` +
                 `> */ttuser* khaby.lame`
@@ -54,12 +54,12 @@ export default {
         }
 
         try {
-            await reply(styleText(`ꕤ *Buscando información de @${username}...*`));
+            await reply(styleText(`ꕢ *Buscando información de @${username}...*`));
             const user = await ttstalk(username);
 
             if (user.status === 'error' || !user.username) {
                 return await reply(styleText(
-                    `ꕤ *Error*\n\n` +
+                    `ꕢ *Error*\n\n` +
                     `> No se encontró el usuario @${username}\n` +
                     `> Verifica que el nombre de usuario sea correcto.`
                 ));
@@ -75,7 +75,7 @@ export default {
             };
 
             const caption = styleText(
-                `ꕤ *Perfil de TikTok*\n\n` +
+                `ꕢ *Perfil de TikTok*\n\n` +
                 `> ┌───────────────\n` +
                 `> │ ❀ *Usuario »* @${user.username}\n` +
                 `> │ ❀ *Nombre »* ${user.name || 'N/A'}\n` +
@@ -106,7 +106,7 @@ export default {
             await reply(caption);
         } catch (error) {
             logger.error('[TTUser] Error:', error);
-            await reply(styleText(`ꕤ *Error*\n\n> No se pudo obtener información del usuario @${username}`));
+            await reply(styleText(`ꕢ *Error*\n\n> No se pudo obtener información del usuario @${username}`));
         }
     }
 };

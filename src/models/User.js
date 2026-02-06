@@ -33,8 +33,8 @@ const UserSchema = new mongoose.Schema({
     desbloqueo: { type: Number, default: 0 }
 }, { strict: false });
 
-// Índices para mejor rendimiento
-// UserSchema.index({ id: 1 }, { unique: true });
+
+
 UserSchema.index({ 'economy.coins': -1 });
 UserSchema.index({ 'economy.bank': -1 });
 UserSchema.index({ 'level.xp': -1 });

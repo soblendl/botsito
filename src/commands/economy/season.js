@@ -17,7 +17,7 @@ export default {
                 return await reply(styleText('📊 Aún no hay datos en la temporada actual.'));
             }
 
-            let message = 'ꕥ Ranking de Temporada\n\n';
+            let message = 'ꕣ Ranking de Temporada\n\n';
             const medals = ['❶', '❷', '❸'];
 
             let groupMetadata = null;
@@ -47,7 +47,7 @@ export default {
                             displayName = contact.notify || contact.name || contact.verifiedName || contact.pushname;
                         }
                     } catch (e) {
-                        // Silent fail
+                        
                     }
                 }
 
@@ -87,7 +87,7 @@ export default {
 
         const userRank = await economySeason.getUserRank(sender);
 
-        let message = `ꕥ Temporada Actual: *${stats.name}*\n\n`;
+        let message = `ꕣ Temporada Actual: *${stats.name}*\n\n`;
         message += `> ⏰ Tiempo restante » *${timeMsg}*\n`;
         message += `> 👥 Participantes » *${stats.participants}*\n`;
         message += `> 💰 Economía Total » *¥${formatNumberLarge(stats.totalCoins)}*\n`;

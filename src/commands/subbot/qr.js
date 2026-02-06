@@ -4,7 +4,7 @@ export default {
     commands: ['qr'],
     async execute(ctx) {
         if (!ctx.args[0]) {
-            return await ctx.reply(styleText('ꕤ Debes proporcionar un código.\nUso: #qr <código>'));
+            return await ctx.reply(styleText('ꕢ Debes proporcionar un código.\nUso: #qr <código>'));
         }
         await ctx.reply(styleText('⏳ Iniciando sub-bot con QR, por favor espera...'));
         const result = await jadibotManager.startSubbot(ctx.args[0], ctx.chatId, ctx.bot.sock);

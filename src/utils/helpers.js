@@ -1,4 +1,4 @@
-import { groupMetadataCache } from './GroupMetadataCache.js';
+
 export const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 export const getBuffer = async (url) => {
     const response = await fetch(url);
@@ -46,12 +46,8 @@ export const getName = async (bot, chatId, userId) => {
         if (chatId.endsWith('@g.us')) {
             let groupMetadata;
             try {
-                groupMetadata = await groupMetadataCache.get(sock, chatId);
-            } catch (e) {
-                try {
-                    groupMetadata = await sock.groupMetadata(chatId);
-                } catch (e2) { }
-            }
+                groupMetadata = await sock.groupMetadata(chatId);
+            } catch (e) { }
             if (groupMetadata && groupMetadata.participants) {
                 const participant = groupMetadata.participants.find(p => {
                     const pId = p.id.split('@')[0].split(':')[0];

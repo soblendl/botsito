@@ -8,7 +8,7 @@ export default {
 
         if (!link) {
             return ctx.reply(styleText(
-                `ꕤ *Uso del Comando*\n\n` +
+                `ꕢ *Uso del Comando*\n\n` +
                 `> /join <link del grupo>\n` +
                 `> /invite <link del grupo>\n\n` +
                 `*Ejemplo:*\n` +
@@ -35,7 +35,7 @@ export default {
 
         try {
             await ctx.reply(styleText(
-                `ꕤ *Procesando...*\n\n` +
+                `ꕢ *Procesando...*\n\n` +
                 `> Intentando unirse al grupo...`
             ));
 
@@ -43,13 +43,13 @@ export default {
 
             if (result) {
                 await ctx.reply(styleText(
-                    `ꕥ *¡Éxito!*\n\n` +
+                    `ꕣ *¡Éxito!*\n\n` +
                     `> Me he unido al grupo correctamente.\n` +
                     `> ID del grupo: ${result}`
                 ));
             } else {
                 await ctx.reply(styleText(
-                    `ꕥ *¡Listo!*\n\n` +
+                    `ꕣ *¡Listo!*\n\n` +
                     `> Solicitud enviada correctamente.`
                 ));
             }
@@ -69,7 +69,7 @@ export default {
             }
 
             await ctx.reply(styleText(
-                `ꕥ *Error al Unirse*\n\n` +
+                `ꕣ *Error al Unirse*\n\n` +
                 `> ${errorMessage}\n\n` +
                 `*Sugerencias:*\n` +
                 `> • Verifica que el link sea correcto\n` +

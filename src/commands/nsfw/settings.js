@@ -4,15 +4,15 @@ export default {
     async execute(ctx) {
         const { chatId, sender, senderLid, args, isGroup, bot, dbService } = ctx;
         if (!isGroup) {
-            return await ctx.reply(styleText('ꕤ Este comando solo funciona en grupos.'));
+            return await ctx.reply(styleText('ꕢ Este comando solo funciona en grupos.'));
         }
         const userIdForAdmin = senderLid || sender;
         const admin = await isAdmin(bot, chatId, userIdForAdmin);
         if (!admin) {
-            return await ctx.reply(styleText('ꕤ Solo los administradores pueden usar este comando.'));
+            return await ctx.reply(styleText('ꕢ Solo los administradores pueden usar este comando.'));
         }
         if (!args[0] || !['on', 'off'].includes(args[0].toLowerCase())) {
-            return await ctx.reply(styleText('ꕤ Uso » *#nsfw* <on/off>'));
+            return await ctx.reply(styleText('ꕢ Uso » *#nsfw* <on/off>'));
         }
         const enable = args[0].toLowerCase() === 'on';
         const group = await dbService.getGroup(chatId);
@@ -20,6 +20,6 @@ export default {
         await dbService.updateGroup(chatId, {
             'settings.nsfw': enable
         });
-        await ctx.reply(styleText(`ꕤ Comandos NSFW ${enable ? 'activados' : 'desactivados'}.`));
+        await ctx.reply(styleText(`ꕢ Comandos NSFW ${enable ? 'activados' : 'desactivados'}.`));
     }
 };

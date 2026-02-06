@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { UploadService } from '../../services/media/UploadService.js'; // Ensure this path is correct based on original file
+import { UploadService } from '../../services/media/UploadService.js'; 
 import { downloadMediaMessage } from 'baileys';
 import { styleText, isOwner } from '../../utils/helpers.js';
 import { globalLogger as logger } from '../../utils/logger.js';
@@ -8,26 +8,26 @@ import { globalLogger as logger } from '../../utils/logger.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Helper for normalization
+
 function normalizeName(name) {
     return name.trim().toLowerCase();
 }
 
 export default {
-    commands: [], // No explicit command triggers, triggered via 'before' hook
+    commands: [], 
     tags: ['owner'],
     help: ['addwaifu'],
     before: async (ctx) => {
         const text = ctx.body || '';
 
-        // Verify Owner
+        
         if (!isOwner(ctx.sender)) return false;
 
-        // Regex to match the character form
+        
         const regex = /❀ Nombre »\s*(.+)\s*[\n\r]+⚥ Genero »\s*(.+)\s*[\n\r]+✰ Valor »\s*(.+)\s*[\n\r]+♡ Estado »\s*(.+)\s*[\n\r]+❖ Fuente »\s*(.+)/i;
         const match = text.match(regex);
 
-        // If it doesn't match the form, ignore
+        
         if (!match) return false;
 
         const name = match[1].trim();
@@ -36,8 +36,8 @@ export default {
         const status = match[4].trim();
         const source = match[5].trim();
 
-        // Check for duplicates using GachaService
-        // Note: ctx.gachaService must be available in the context
+        
+        
         if (ctx.gachaService) {
             const existing = ctx.gachaService.getByName(name);
             if (existing) {
@@ -47,7 +47,7 @@ export default {
                     `ID existente: ${existing.id}\n\n` +
                     `> No se agregó el personaje.`
                 ));
-                return true; // Stop processing
+                return true; 
             }
         } else {
             logger.warn('GachaService not found in context for addwaifu');
@@ -57,7 +57,7 @@ export default {
         let msg = ctx.msg;
 
         try {
-            // Logic to modify/extract image buffer from message
+            
             const message = msg.message;
             if (message.imageMessage) {
                 imageBuffer = await downloadMediaMessage(msg, 'buffer');
@@ -84,7 +84,7 @@ export default {
         }
 
         if (!imageBuffer) {
-            await ctx.reply(styleText('ꕤ Falta la imagen. Por favor adjunta una imagen o responde a una imagen con el formulario.'));
+            await ctx.reply(styleText('ꕢ Falta la imagen. Por favor adjunta una imagen o responde a una imagen con el formulario.'));
             return true;
         }
 
@@ -93,7 +93,7 @@ export default {
 
             let imageUrl;
             try {
-                // Upload to Soblend R2
+                
                 imageUrl = await UploadService.uploadToSoblendR2(imageBuffer);
                 if (!imageUrl || !imageUrl.startsWith('http')) {
                     throw new Error('URL invalid from Soblend R2');
@@ -120,7 +120,7 @@ export default {
                 votes: 0
             };
 
-            // Add to Global GachaService
+            
             const addedChar = await ctx.gachaService.addCharacter(newCharacterData);
 
             if (addedChar) {
@@ -150,6 +150,6 @@ export default {
         return true;
     },
     async execute(ctx) {
-        // Triggered via 'before' hook, so no execute logic needed
+        
     }
 };

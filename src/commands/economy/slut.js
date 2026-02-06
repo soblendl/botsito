@@ -33,7 +33,7 @@ export default {
             if (ctx.isGroup) {
                 const groupData = await ctx.dbService.getGroup(ctx.chatId);
                 if (!groupData?.settings?.economy) {
-                    return await ctx.reply(styleText('ꕤ El sistema de economía está desactivado en este grupo.'));
+                    return await ctx.reply(styleText('ꕢ El sistema de economía está desactivado en este grupo.'));
                 }
             }
 
@@ -44,7 +44,7 @@ export default {
 
             if (cooldown > 0) {
                 return await ctx.reply(styleText(
-                    `ꕤ Calmate, necesitas un reposo\n> Vuelve en » ${formatTime(cooldown)}`
+                    `ꕢ Calmate, necesitas un reposo\n> Vuelve en » ${formatTime(cooldown)}`
                 ));
             }
 
@@ -58,12 +58,12 @@ export default {
             const job = getRandom(SLUT_JOBS);
 
             await ctx.reply(styleText(
-                `ꕥ ${job} y ganaste *¥${formatNumber(REWARD)}* coins.`
+                `ꕣ ${job} y ganaste *¥${formatNumber(REWARD)}* coins.`
             ));
 
         } catch (error) {
             logger.error('[SLUT] ERROR:', error);
-            await ctx.reply(styleText('ꕤ Error al ejecutar el comando.'));
+            await ctx.reply(styleText('ꕢ Error al ejecutar el comando.'));
         }
     }
 };

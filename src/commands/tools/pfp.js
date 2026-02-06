@@ -31,10 +31,10 @@ export default {
             }
 
             if (!pfpUrl) {
-                return await ctx.reply(styleText('ꕤ El usuario no tiene foto de perfil o es privada.'));
+                return await ctx.reply(styleText('ꕢ El usuario no tiene foto de perfil o es privada.'));
             }
 
-            const caption = `ꕥ *Profile Picture*\n\n` +
+            const caption = `ꕣ *Profile Picture*\n\n` +
                 `> *Usuario* » @${targetJid.split('@')[0]}\n` +
                 `──────────────────\n` +
                 `> _*Powered By DeltaByte*_`;
@@ -46,7 +46,7 @@ export default {
             });
         } catch (error) {
             logger.error('[PFP] Error:', error);
-            await ctx.reply(styleText('ꕤ Ocurrió un error al obtener la foto. Inténtalo más tarde.'));
+            await ctx.reply(styleText('ꕢ Ocurrió un error al obtener la foto. Inténtalo más tarde.'));
         }
     }
 };

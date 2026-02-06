@@ -3,7 +3,7 @@ export default {
     commands: ['deposit', 'dep', 'depositar', 'd'],
     async execute(ctx) {
         if (ctx.args.length === 0) {
-            return await ctx.reply(styleText('ꕤ Uso: *#deposit* <cantidad|all>'));
+            return await ctx.reply(styleText('ꕢ Uso: *#deposit* <cantidad|all>'));
         }
         const userData = await ctx.dbService.getUser(ctx.sender);
         const economy = userData.economy || {};
@@ -14,16 +14,16 @@ export default {
             amount = parseInt(ctx.args[0]);
         }
         if (isNaN(amount) || amount <= 0) {
-            return await ctx.reply(styleText('ꕤ La cantidad debe ser un número mayor a 0.'));
+            return await ctx.reply(styleText('ꕢ La cantidad debe ser un número mayor a 0.'));
         }
         if ((economy.coins || 0) < amount) {
-            return await ctx.reply(styleText('ꕤ No tienes suficientes coins en tu billetera.'));
+            return await ctx.reply(styleText('ꕢ No tienes suficientes coins en tu billetera.'));
         }
         ctx.dbService.updateUser(ctx.sender, {
             'economy.coins': (economy.coins || 0) - amount,
             'economy.bank': (economy.bank || 0) + amount
         });
         await ctx.dbService.save();
-        await ctx.reply(styleText(`ꕥ Depositaste *¥${formatNumber(amount)}* coins en el banco.`));
+        await ctx.reply(styleText(`ꕣ Depositaste *¥${formatNumber(amount)}* coins en el banco.`));
     }
 };

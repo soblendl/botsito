@@ -1,4 +1,6 @@
 import { isAdmin, isBotAdmin, styleText, isOwner } from '../../utils/helpers.js';
+import { findParticipant } from '../../utils/permissions.js';
+
 const botAdminCache = new Map();
 export default {
     commands: ['antilink'],
@@ -22,7 +24,13 @@ export default {
         if (!botIsAdmin) return;
         try {
             await bot.sock.sendMessage(chatId, { delete: msg.key });
-            await bot.sock.groupParticipantsUpdate(chatId, [sender], 'remove');
+
+            // Convert LID to Phone JID if necessary
+            const participant = await findParticipant(bot, chatId, sender);
+
+            if (participant) {
+                await bot.sock.groupParticipantsUpdate(chatId, [participant.id], 'remove');
+            }
         } catch (e) {
             console.error('[Antilink] Error al eliminar usuario/mensaje:', e);
         }
@@ -34,22 +42,22 @@ export default {
     },
     async execute(ctx) {
         if (!ctx.isGroup) {
-            return await ctx.reply(styleText('ꕤ Este comando solo funciona en grupos.'));
+            return await ctx.reply(styleText('ꕢ Este comando solo funciona en grupos.'));
         }
         const admin = await isAdmin(ctx.bot, ctx.chatId, ctx.senderLid || ctx.sender);
         if (!admin) {
-            return await ctx.reply(styleText('ꕤ Solo los administradores pueden usar este comando.'));
+            return await ctx.reply(styleText('ꕢ Solo los administradores pueden usar este comando.'));
         }
         if (!ctx.args[0] || !['on', 'off'].includes(ctx.args[0].toLowerCase())) {
-            return await ctx.reply(styleText('ꕤ Uso: */antilink* `<on/off>`'));
+            return await ctx.reply(styleText('ꕢ Uso: */antilink* `<on/off>`'));
         }
         try {
             const enable = ctx.args[0].toLowerCase() === 'on';
             await ctx.dbService.updateGroup(ctx.chatId, { 'settings.antilink': enable });
             botAdminCache.delete(ctx.chatId);
-            await ctx.reply(styleText(`ꕥ Antilink ${enable ? 'activado ✅' : 'desactivado ❌'}.`));
+            await ctx.reply(styleText(`ꕣ Antilink ${enable ? 'activado ✅' : 'desactivado ❌'}.`));
         } catch (error) {
-            await ctx.reply(styleText('ꕤ Error al cambiar la configuración.'));
+            await ctx.reply(styleText('ꕢ Error al cambiar la configuración.'));
         }
     }
 };

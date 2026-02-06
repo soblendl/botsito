@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import pino from 'pino'; // Import pino
 import { globalLogger as logger } from '../../utils/logger.js';
 
 const BLOCKED_COMMANDS = [
@@ -58,12 +59,12 @@ class PrembotManager {
     async startPrembot(tokenId, chatId, mainSock, phoneNumber) {
         const validation = this.tokenService.validateToken(tokenId);
         if (!validation.valid) {
-            return { success: false, message: `ꕤ ${validation.error}` };
+            return { success: false, message: `ꕢ ${validation.error}` };
         }
 
         let cleanPhone = phoneNumber.replace(/[^0-9]/g, '');
         if (cleanPhone.length < 10 || cleanPhone.length > 15) {
-            return { success: false, message: `ꕤ Número de teléfono inválido: ${cleanPhone} (${cleanPhone.length} dígitos)` };
+            return { success: false, message: `ꕢ Número de teléfono inválido: ${cleanPhone} (${cleanPhone.length} dígitos)` };
         }
 
         logger.info(`[Prembot] Phone number received: ${phoneNumber}`);
@@ -71,10 +72,10 @@ class PrembotManager {
 
         const userId = `${cleanPhone}@s.whatsapp.net`;
         if (this.prembots.has(userId)) {
-            return { success: false, message: 'ꕤ Ya tienes un Prembot activo' };
+            return { success: false, message: 'ꕢ Ya tienes un Prembot activo' };
         }
         if (this.pendingConnections.has(userId)) {
-            return { success: false, message: 'ꕤ Ya hay una conexión en proceso' };
+            return { success: false, message: 'ꕢ Ya hay una conexión en proceso' };
         }
 
         this.pendingConnections.set(userId, {
@@ -91,10 +92,29 @@ class PrembotManager {
 
             const prembotUUID = uuidv4();
             const auth = new LocalAuth(prembotUUID, sessionPath);
-            const account = { jid: '', pn: `${cleanPhone}@s.whatsapp.net`, name: '' };
+            const account = { jid: '', pn: `${cleanPhone}@s.whatsapp.net`, name: 'Kaoruko Prembot' };
 
             logger.info(`[Prembot] Account config (masked)`);
-            const prembotInstance = new Bot(prembotUUID, auth, account);
+
+            // Fix: Use generic pino logger to satisfy wapi requirements
+            // Using Windows signature since host is Windows
+            const browserConfig = ['Windows', 'Chrome', '20.0.04'];
+            const botLogger = pino({ level: 'info' });
+
+            const prembotInstance = new Bot(prembotUUID, auth, account, {
+                browser: browserConfig,
+                logger: botLogger,
+                mobile: false // Explicitly state this is not mobile API
+            });
+
+            // FORCE OVERRIDE LOGGER to ensure wapi uses it
+            prembotInstance.logger = botLogger;
+            if (prembotInstance.sock) prembotInstance.sock.logger = botLogger;
+            if (prembotInstance.ws) prembotInstance.ws.logger = botLogger;
+
+            // Debug probe
+            logger.info(`[Prembot] Instance created. Keys: ${Object.keys(prembotInstance).join(', ')}`);
+            if (prembotInstance.ws) logger.info(`[Prembot] WS initialized immediately. Keys: ${Object.keys(prembotInstance.ws).join(', ')}`);
 
             let isConnected = false;
             const timeout = setTimeout(() => {
@@ -102,26 +122,20 @@ class PrembotManager {
                     this.pendingConnections.delete(userId);
                     prembotInstance.disconnect?.();
                     mainSock.sendMessage(chatId, {
-                        text: 'ꕤ *Tiempo agotado*\n\n> No se pudo vincular. El token sigue disponible.'
+                        text: 'ꕢ *Tiempo agotado*\n\n> No se pudo vincular. El token sigue disponible.'
                     }).catch(() => { });
                 }
             }, 3 * 60 * 1000);
 
-            prembotInstance.on('otp', async (otpCode) => {
-                logger.info(`[Prembot] OTP received for ${cleanPhone}`);
-                const formatted = otpCode.match(/.{1,4}/g)?.join('-') || otpCode;
-                await mainSock.sendMessage(chatId, {
-                    text: `🌟 *PREMBOT - Código de Vinculación*\n\n` +
-                        `\`${formatted}\`\n\n` +
-                        `*Pasos:*\n` +
-                        `① Abre WhatsApp\n` +
-                        `② Dispositivos vinculados\n` +
-                        `③ Vincular dispositivo\n` +
-                        `④ Vincular con número\n` +
-                        `⑤ Ingresa el código\n\n` +
-                        `> _Expira en 3 minutos_`
-                });
-                await mainSock.sendMessage(chatId, { text: otpCode });
+            // Listen for connection updates
+            prembotInstance.ws?.ev.on('connection.update', (update) => {
+                const { connection, lastDisconnect } = update;
+                if (connection === 'close') {
+                    // Only log non-auth failures
+                    if (lastDisconnect?.error?.output?.statusCode !== 401) {
+                        logger.warn(`[Prembot] Closed during pairing: ${lastDisconnect?.error?.message}`);
+                    }
+                }
             });
 
             prembotInstance.on('open', async (acc) => {
@@ -148,7 +162,7 @@ class PrembotManager {
 
                 const userName = acc?.name || 'Usuario';
                 await mainSock.sendMessage(chatId, {
-                    text: `ꕤ *PREMBOT ACTIVADO*\n\n` +
+                    text: `ꕢ *PREMBOT ACTIVADO*\n\n` +
                         `> ${userName}\n` +
                         `> ${cleanPhone}\n` +
                         `> Token: ${tokenId.slice(0, 15)}...\n\n` +
@@ -176,13 +190,13 @@ class PrembotManager {
                     }
                 } else {
                     this.pendingConnections.delete(userId);
-                    let errorMsg = 'ꕤ No se pudo conectar';
+                    let errorMsg = 'ꕢ No se pudo conectar';
                     const reasonStr = String(reason).toLowerCase();
 
-                    if (reasonStr.includes('401')) errorMsg = 'ꕤ Código inválido';
-                    else if (reasonStr.includes('403')) errorMsg = 'ꕤ WhatsApp bloqueó temporalmente';
-                    else if (reasonStr.includes('428')) errorMsg = 'ꕤ Máximo de dispositivos alcanzado';
-                    else if (reasonStr.includes('515')) errorMsg = 'ꕤ Error de WhatsApp. Reintenta.';
+                    if (reasonStr.includes('401')) errorMsg = 'ꕢ Código inválido';
+                    else if (reasonStr.includes('403')) errorMsg = 'ꕢ WhatsApp bloqueó temporalmente';
+                    else if (reasonStr.includes('428')) errorMsg = 'ꕢ Máximo de dispositivos alcanzado';
+                    else if (reasonStr.includes('515')) errorMsg = 'ꕢ Error de WhatsApp. Reintenta.';
 
                     mainSock.sendMessage(chatId, { text: errorMsg }).catch(() => { });
                 }
@@ -193,13 +207,62 @@ class PrembotManager {
             });
 
             logger.info(`[Prembot] Starting OTP login for: ${cleanPhone}`);
+
+            // Initialize socket first
             await prembotInstance.login('otp');
 
-            return { success: true, message: 'ꕤ Generando código de vinculación...' };
+            // Wait for socket to stabilize (8s is good)
+            await new Promise(resolve => setTimeout(resolve, 8000));
+
+            // Request pairing code
+            try {
+                // Determine socket object
+                const socket = prembotInstance.ws || prembotInstance.sock || prembotInstance.socket;
+
+                if (!socket || !socket.requestPairingCode) {
+                    throw new Error('El socket no está listo (ws not found)');
+                }
+
+                logger.info(`[Prembot] Requesting pairing code for ${cleanPhone}...`);
+
+                // Simple retry loop without broken readyState check
+                let code;
+                let attempts = 0;
+                while (attempts < 5) {
+                    try {
+                        code = await socket.requestPairingCode(cleanPhone);
+                        if (code) break;
+                    } catch (e) {
+                        attempts++;
+                        logger.warn(`[Prembot] Attempt ${attempts} failed: ${e.message}`);
+                        await new Promise(resolve => setTimeout(resolve, 3000));
+                    }
+                }
+
+                const formatted = code?.match(/.{1,4}/g)?.join('-') || code;
+
+                await mainSock.sendMessage(chatId, {
+                    text: `🌟 *PREMBOT - Código de Vinculación*\n\n` +
+                        `\`${formatted}\`\n\n` +
+                        `*Pasos:*\n` +
+                        `① Abre WhatsApp\n` +
+                        `② Dispositivos vinculados\n` +
+                        `③ Vincular dispositivo\n` +
+                        `④ Vincular con número\n` +
+                        `⑤ Ingresa el código\n\n` +
+                        `> _Expira en 3 minutos_`
+                });
+                await mainSock.sendMessage(chatId, { text: code }); // Send raw code for easy copy
+
+                return { success: true, message: 'ꕢ Código enviado. Revisa tu chat.' };
+            } catch (pairingError) {
+                logger.error('[Prembot] Pairing Error:', pairingError);
+                throw new Error('No se pudo generar el código: ' + pairingError.message);
+            }
         } catch (error) {
             logger.error('[Prembot] Error:', error);
             this.pendingConnections.delete(userId);
-            return { success: false, message: 'ꕤ Error: ' + error.message };
+            return { success: false, message: 'ꕢ Error: ' + error.message };
         }
     }
 
@@ -221,7 +284,7 @@ class PrembotManager {
 
                 if (!this.tokenService.isPrembotActive(ownerId)) {
                     await prembotInstance.sendMessage(chatId, {
-                        text: 'ꕤ Este Prembot ha expirado o fue desactivado.'
+                        text: 'ꕢ Este Prembot ha expirado o fue desactivado.'
                     });
                     this.stopPrembot(ownerId);
                     return;
@@ -238,7 +301,7 @@ class PrembotManager {
 
                     if (this.isCommandBlocked(command)) {
                         await prembotInstance.sendMessage(chatId, {
-                            text: 'ꕤ Este comando está bloqueado en Prembots.'
+                            text: 'ꕢ Este comando está bloqueado en Prembots.'
                         });
                         continue;
                     }
@@ -332,9 +395,9 @@ class PrembotManager {
         if (!prembotData) {
             if (this.pendingConnections.has(userId)) {
                 this.pendingConnections.delete(userId);
-                return { success: true, message: 'ꕤ Conexión cancelada' };
+                return { success: true, message: 'ꕢ Conexión cancelada' };
             }
-            return { success: false, message: 'ꕤ No tienes un Prembot activo' };
+            return { success: false, message: 'ꕢ No tienes un Prembot activo' };
         }
 
         try {
@@ -345,9 +408,9 @@ class PrembotManager {
                 prembotData.bot.disconnect?.();
             }
             this.prembots.delete(userId);
-            return { success: true, message: 'ꕤ Prembot detenido' };
+            return { success: true, message: 'ꕢ Prembot detenido' };
         } catch (error) {
-            return { success: false, message: 'ꕤ Error al detener' };
+            return { success: false, message: 'ꕢ Error al detener' };
         }
     }
 

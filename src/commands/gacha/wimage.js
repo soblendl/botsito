@@ -6,7 +6,7 @@ export default {
     async execute(ctx) {
         const { args, gachaService } = ctx;
         if (args.length === 0) {
-            return ctx.reply(styleText('ꕤ Debes especificar el nombre del personaje.\nUso: #wimage <personaje>'));
+            return ctx.reply(styleText('ꕢ Debes especificar el nombre del personaje.\nUso: #wimage <personaje>'));
         }
         const query = args.join(' ').toLowerCase();
         const character = gachaService.characters.find(c =>
@@ -14,10 +14,10 @@ export default {
             (c.alias && c.alias.toLowerCase().includes(query))
         );
         if (!character) {
-            return ctx.reply(styleText('ꕤ Personaje no encontrado.'));
+            return ctx.reply(styleText('ꕢ Personaje no encontrado.'));
         }
         if (!character.img || character.img.length === 0) {
-            return ctx.reply(styleText(`ꕤ ${character.name} no tiene imágenes registradas.`));
+            return ctx.reply(styleText(`ꕢ ${character.name} no tiene imágenes registradas.`));
         }
         const randomImg = character.img[Math.floor(Math.random() * character.img.length)];
         try {
@@ -28,13 +28,13 @@ export default {
             console.error('[DEBUG] Error sending waifu image:', error);
             if (error.code === 'ENOSPC') {
                 return ctx.reply(styleText(
-                    `ꕤ Error temporal del servidor (sin espacio).\\n\\n` +
+                    `ꕢ Error temporal del servidor (sin espacio).\\n\\n` +
                     `📸 *${character.name}*\\n${character.source || ''}\\n\\n` +
                     `Link: ${randomImg}`
                 ));
             }
             return ctx.reply(styleText(
-                `ꕤ Error al enviar imagen.\\n\\n` +
+                `ꕢ Error al enviar imagen.\\n\\n` +
                 `📸 *${character.name}*\\n${character.source || ''}\\n\\n` +
                 `Link: ${randomImg}`
             ));

@@ -68,7 +68,7 @@ export default {
                 if (error.code === 'ENOSPC' || error.message?.includes('ENOSPC')) {
                     global.memoryManager?.forceCleanup();
                     await bot.sendMessage(chatId, {
-                        text: styleText('ꕤ Error de espacio/memoria. Intenta en unos segundos.')
+                        text: styleText('ꕢ Error de espacio/memoria. Intenta en unos segundos.')
                     });
                     return; 
                 }

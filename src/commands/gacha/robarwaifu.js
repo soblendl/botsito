@@ -1,9 +1,12 @@
 import { styleText } from '../../utils/helpers.js';
+import { normalizeUserId } from '../../utils/permissions.js';
 export default {
     commands: ['robarwaifu', 'robar'],
     async execute(ctx) {
         const args = ctx.args;
         const userData = ctx.userData;
+        if (!userData.gacha) userData.gacha = { characters: [] };
+
         if (!args[0]) {
             return await ctx.reply(styleText('✘ Debes proporcionar el ID de la waifu que quieres robar.\n\nEjemplo:\n*#robarwaifu id123*'));
         }
@@ -15,13 +18,20 @@ export default {
                 return await ctx.reply(styleText(`✘ No se encontró ninguna waifu con el ID: *${waifuId}*`));
             }
             const oldOwner = waifu.user;
-            if (!oldOwner || oldOwner === ctx.sender) {
+
+            // Normalize IDs for comparison
+            const normalizedOwner = normalizeUserId(oldOwner);
+            const normalizedSender = normalizeUserId(ctx.sender);
+
+            if (!oldOwner || normalizedOwner === normalizedSender) {
                 return await ctx.reply(styleText('✘ Esta waifu no tiene dueño o ya es tuya.'));
             }
             if (oldOwner === global.botOwner) {
                 return await ctx.reply(styleText(`✘ No puedes robar la waifu de mi owner *${waifu.name}* (ID: ${waifu.id}).`));
             }
             const ownerData = ctx.dbService.getUser(oldOwner);
+            if (!ownerData.gacha) ownerData.gacha = { characters: [] };
+            if (!ownerData.gacha.characters) ownerData.gacha.characters = [];
             if ((ownerData.antirobo || 0) > Date.now()) {
                 return await ctx.reply(styleText(
                     `🛡 La waifu *${waifu.name}* (ID: ${waifu.id}) tiene AntiRobo activo.\n` +
@@ -47,7 +57,7 @@ export default {
                 cooldowns[ctx.sender] = userCooldown;
                 ctx.db.cooldowns = cooldowns;
             }
-            gachaService.transferCharacter(waifuId, ctx.sender);
+            await gachaService.transferCharacter(waifuId, ctx.sender);
             if (!userData.gacha.characters) {
                 userData.gacha.characters = [];
             }
@@ -62,7 +72,7 @@ export default {
             }
             ctx.dbService.markDirty();
             await ctx.dbService.save();
-            await ctx.gachaService.save(); 
+            await ctx.gachaService.save();
             await ctx.reply(styleText(
                 `✧ Has robado a *${waifu.name}* (ID: ${waifu.id}) del usuario *${oldOwner?.split('@')[0] || 'Nadie'}* ✧`
             ));

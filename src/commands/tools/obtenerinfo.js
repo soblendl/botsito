@@ -9,12 +9,12 @@ export default {
         const { msg, bot, chatId, isGroup } = ctx;
 
         if (!isGroup) {
-            return await ctx.reply(styleText('ꕤ Este comando solo funciona en grupos.'));
+            return await ctx.reply(styleText('ꕢ Este comando solo funciona en grupos.'));
         }
 
         const mentionedJid = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid;
         if (!mentionedJid || mentionedJid.length === 0) {
-            return await ctx.reply(styleText('ꕤ Debes etiquetar a un usuario.\nEjemplo: #obtenerinfo @usuario'));
+            return await ctx.reply(styleText('ꕢ Debes etiquetar a un usuario.\nEjemplo: #obtenerinfo @usuario'));
         }
 
         const targetUser = mentionedJid[0];
@@ -43,7 +43,7 @@ export default {
             await ctx.reply(styleText(message), { mentions: [targetUser] });
         } catch (error) {
             logger.error('Error en obtenerinfo:', error);
-            await ctx.reply(styleText('ꕤ Error al obtener la información del usuario.'));
+            await ctx.reply(styleText('ꕢ Error al obtener la información del usuario.'));
         }
     }
 };

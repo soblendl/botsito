@@ -8,7 +8,7 @@ import { randomUUID } from 'crypto';
 import memoryManager, { MEMORY_LIMITS } from '../../utils/MemoryManager.js';
 import { globalLogger as logger } from '../../utils/logger.js';
 
-const TEMP_DIR = path.join(os.tmpdir(), 'kaoruko-downloads');
+const TEMP_DIR = path.join(os.tmpdir(), 'shoko-downloads');
 const REPLIT_CACHE_DIR = path.join(process.cwd(), '.cache');
 
 if (!fs.existsSync(TEMP_DIR)) {

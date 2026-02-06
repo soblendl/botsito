@@ -25,7 +25,7 @@ export default {
             const name = ctx.args.join(' ').trim();
             if (!name) {
                 return await ctx.reply(styleText(
-                    `ꕥ *Establecer Nombre del Bot*\n\n` +
+                    `ꕣ *Establecer Nombre del Bot*\n\n` +
                     `*Uso:* #setnamesubbot <nombre>\n\n` +
                     `*Ejemplo:*\n` +
                     `> #setnamesubbot MiBot Premium\n\n` +
@@ -56,7 +56,7 @@ export default {
 
                 if (!isImage) {
                     return await ctx.reply(styleText(
-                        `ꕥ *Establecer Imagen del Menú*\n\n` +
+                        `ꕣ *Establecer Imagen del Menú*\n\n` +
                         `*Uso:*\n` +
                         `> Enviar imagen con #setimagesubbot\n` +
                         `> O citar una imagen con #setimagesubbot\n\n` +
@@ -101,7 +101,7 @@ export default {
             const imageDisplay = config?.customImage ? '✅ Configurada' : '❌ No configurada';
 
             return await ctx.reply(styleText(
-                `ꕥ *Configuración de tu Prembot*\n\n` +
+                `ꕣ *Configuración de tu Prembot*\n\n` +
                 `*Nombre:* ${nameDisplay}\n` +
                 `*Imagen del menú:* ${imageDisplay}\n\n` +
                 `*Comandos disponibles:*\n` +

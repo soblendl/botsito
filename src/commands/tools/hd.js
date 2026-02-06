@@ -80,29 +80,29 @@ export default {
         const isQuotedImage = quotedContent?.imageMessage;
 
         if (!isImage && !isQuotedImage) {
-            return await ctx.reply(styleText('ꕤ Por favor responde a una imagen o envía una imagen con el comando.'));
+            return await ctx.reply(styleText('ꕢ Por favor responde a una imagen o envía una imagen con el comando.'));
         }
 
         try {
-            await ctx.reply(styleText('ꕤ Mejorando calidad de imagen... (esto puede tardar unos segundos)'));
+            await ctx.reply(styleText('ꕢ Mejorando calidad de imagen... (esto puede tardar unos segundos)'));
             const messageToDownload = quotedMsg || msg;
             const buffer = await downloadMediaMessage(
                 messageToDownload,
                 'buffer',
                 {},
                 {
-                    logger: console, // Baileys requires a logger object, we can keep console or pass a dummy
+                    logger: console, 
                     reuploadRequest: bot.sock.updateMediaMessage
                 }
             );
             const resultBuffer = await hdr(buffer);
             await bot.sock.sendMessage(ctx.chatId, {
                 image: resultBuffer,
-                caption: styleText('ꕥ Imagen mejorada con éxito.')
+                caption: styleText('ꕣ Imagen mejorada con éxito.')
             }, { quoted: msg });
         } catch (error) {
             logger.error('[HD] Error:', error);
-            await ctx.reply(styleText('ꕤ Ocurrió un error al procesar la imagen. Intenta más tarde.'));
+            await ctx.reply(styleText('ꕢ Ocurrió un error al procesar la imagen. Intenta más tarde.'));
         }
     }
 };

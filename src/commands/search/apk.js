@@ -23,13 +23,13 @@ export default {
 
         try {
             const searchQuery = text.trim();
-            const apiUrl = `https://api.stellarwa.xyz/search/apk?query=${encodeURIComponent(searchQuery)}&key=stellar-20J4F8hk`;
+            const apiUrl = `https://api.stellarwa.xyz/search/apk?query=${encodeURIComponent(searchQuery)}&key=stellar-zzwTj3LP`;
             const response = await axios.get(apiUrl);
             const data = response.data;
 
             if (!data || !data.status || !data.data) {
                 return await ctx.reply(styleText(
-                    'ꕤ No encontré esa aplicación.\n\n' +
+                    'ꕢ No encontré esa aplicación.\n\n' +
                     '> Intenta con otro nombre.'
                 ));
             }
@@ -43,10 +43,10 @@ export default {
             const dlLink = appData.dl;
 
             if (!dlLink) {
-                return await ctx.reply(styleText('ꕤ Encontré la app, pero no el link de descarga.'));
+                return await ctx.reply(styleText('ꕢ Encontré la app, pero no el link de descarga.'));
             }
 
-            const caption = `ꕥ *APK Found!*n\n` +
+            const caption = `ꕣ *APK Found!*n\n` +
                 `> *Nombre* » ${name}\n` +
                 `> *Paquete* » ${pack}\n` +
                 `> *Tamaño* » ${size}\n` +
@@ -65,11 +65,11 @@ export default {
                 document: { url: dlLink },
                 mimetype: 'application/vnd.android.package-archive',
                 fileName: `${name}.apk`,
-                caption: styleText(`ꕥ Aquí tienes tu APK! \n> ✿ *${name}*`)
+                caption: styleText(`ꕣ Aquí tienes tu APK! \n> ✿ *${name}*`)
             });
         } catch (error) {
             logger.error('[APK] Error:', error);
-            await ctx.reply(styleText('ꕤ Ocurrió un error al buscar la aplicación. Inténtalo más tarde.'));
+            await ctx.reply(styleText('ꕢ Ocurrió un error al buscar la aplicación. Inténtalo más tarde.'));
         }
     }
 };

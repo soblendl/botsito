@@ -6,20 +6,20 @@ export default {
         if (ctx.isGroup) {
             const groupData = await ctx.dbService.getGroup(ctx.chatId);
             if (!groupData?.settings?.economy) {
-                return await ctx.reply(styleText('ꕤ El sistema de economía está desactivado en este grupo.'));
+                return await ctx.reply(styleText('ꕢ El sistema de economía está desactivado en este grupo.'));
             }
         }
 
         const mentions = extractMentions(ctx);
         let target = mentions.length > 0 ? mentions[0] : ctx.sender;
 
-        // Fix LID issues
+        
         if (target.includes('@lid')) {
-            // Try to resolve using senderPhone if it's the sender
+            
             if (target === ctx.senderLid && ctx.senderPhone) {
                 target = `${ctx.senderPhone}@s.whatsapp.net`;
             } else {
-                // Fallback: try to resolve from args if mentions failed but text was provided
+                
                 const targetNumber = ctx.args[0]?.replace('@', '');
                 if (targetNumber && /^\d+$/.test(targetNumber)) {
                     target = `${targetNumber}@s.whatsapp.net`;
@@ -27,14 +27,14 @@ export default {
             }
         }
 
-        // Ensure standard JID format
+        
         if (!target.includes('@s.whatsapp.net') && !target.includes('@lid')) {
             target = `${target}@s.whatsapp.net`;
         }
 
         const userData = await ctx.dbService.getUser(target);
         if (!userData) {
-            return await ctx.reply(styleText('ꕤ Usuario no encontrado en la base de datos.'));
+            return await ctx.reply(styleText('ꕢ Usuario no encontrado en la base de datos.'));
         }
 
         const stats = userData.stats || {};

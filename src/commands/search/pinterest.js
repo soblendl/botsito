@@ -22,7 +22,7 @@ export default {
         try {
             if (!text || !text.trim()) {
                 return await ctx.reply(styleText(
-                    `ꕤ *Uso incorrecto del comando*\n\n` +
+                    `ꕢ *Uso incorrecto del comando*\n\n` +
                     `Ejemplo:\n` +
                     `> ${prefix}${command} gatos\n` +
                     `> ${prefix}pin aesthetic wallpaper\n` +
@@ -42,7 +42,7 @@ export default {
             const data = response.data;
             if (!data || !data.success || !data.images || !Array.isArray(data.images) || data.images.length === 0) {
                 return await ctx.reply(styleText(
-                    'ꕤ No se encontraron imágenes para tu búsqueda.\n\n' +
+                    'ꕢ No se encontraron imágenes para tu búsqueda.\n\n' +
                     '> *Tip* » Intenta con otras palabras clave.'
                 ));
             }

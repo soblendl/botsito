@@ -26,14 +26,14 @@ export default {
 
         if (!hasMedia) {
             return await ctx.reply(styleText(
-                `ꕤ *UPLOAD - Subir Archivos*\n\n` +
+                `ꕢ *UPLOAD - Subir Archivos*\n\n` +
                 `> Responde a un archivo con #upload\n` +
                 `> O envía un archivo con el comando.\n\n` +
                 `> Soporta: Imágenes`
             ));
         }
 
-        await ctx.reply(styleText('ꕤ Subiendo archivo...'));
+        await ctx.reply(styleText('ꕢ Subiendo archivo...'));
 
         try {
             const buffer = await downloadMediaMessage(
@@ -43,7 +43,7 @@ export default {
             );
 
             if (!buffer) {
-                return await ctx.reply(styleText('ꕤ Error al descargar el archivo.'));
+                return await ctx.reply(styleText('ꕢ Error al descargar el archivo.'));
             }
 
             let filename = 'file';
@@ -94,14 +94,14 @@ export default {
             }
 
             await ctx.reply(styleText(
-                `ꕥ *Archivo subido exitosamente*\n\n` +
+                `ꕣ *Archivo subido exitosamente*\n\n` +
                 `> Archivo » ${filename}\n` +
                 `> Link » ${fileUrl}\n\n` +
                 `> El archivo estará disponible en línea`
             ));
         } catch (error) {
             logger.error('Error uploading file:', error);
-            await ctx.reply(styleText(`ꕤ Error al subir: ${error.message}`));
+            await ctx.reply(styleText(`ꕢ Error al subir: ${error.message}`));
         }
     }
 };

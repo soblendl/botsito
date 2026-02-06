@@ -24,16 +24,16 @@ export class JadibotManager {
         if (code) {
             return await this.startWithQR(code, chatId, mainSock);
         }
-        return { success: false, message: 'ꕤ Se requiere código o número de teléfono' };
+        return { success: false, message: 'ꕢ Se requiere código o número de teléfono' };
     }
     async startWithPairingCode(chatId, mainSock, phoneNumber) {
         const cleanPhone = phoneNumber.replace(/[^0-9]/g, '');
         const userId = `${cleanPhone}@s.whatsapp.net`;
         if (this.subbots.has(userId)) {
-            return { success: false, message: 'ꕤ Ya tienes un sub-bot activo' };
+            return { success: false, message: 'ꕢ Ya tienes un sub-bot activo' };
         }
         if (this.pendingConnections.has(userId)) {
-            return { success: false, message: 'ꕤ Ya hay una conexión en proceso' };
+            return { success: false, message: 'ꕢ Ya hay una conexión en proceso' };
         }
         this.pendingConnections.set(userId, { startTime: Date.now() });
         try {
@@ -52,7 +52,7 @@ export class JadibotManager {
                     this.pendingConnections.delete(userId);
                     subbotInstance.disconnect?.();
                     mainSock.sendMessage(chatId, {
-                        text: 'ꕤ *Tiempo agotado*\n\n> No se pudo vincular. Intenta nuevamente con */code*'
+                        text: 'ꕢ *Tiempo agotado*\n\n> No se pudo vincular. Intenta nuevamente con */code*'
                     }).catch(() => { });
                 }
             }, 3 * 60 * 1000);
@@ -76,7 +76,7 @@ export class JadibotManager {
                 });
                 const userName = acc?.name || 'Usuario';
                 await mainSock.sendMessage(chatId, {
-                    text: `ꕤ *Sub-bot vinculado exitosamente*\n\n⸝⸝ ${userName}\n⸝⸝ ${cleanPhone}\n\n> *_Ya puedes usar el bot desde ese número_*`
+                    text: `ꕢ *Sub-bot vinculado exitosamente*\n\n⸝⸝ ${userName}\n⸝⸝ ${cleanPhone}\n\n> *_Ya puedes usar el bot desde ese número_*`
                 });
                 subbotInstance.ws?.ev.on('messages.upsert', async ({ messages }) => {
                     const m = messages[0];
@@ -91,16 +91,16 @@ export class JadibotManager {
                 clearTimeout(timeout);
                 if (!isConnected) {
                     this.pendingConnections.delete(userId);
-                    let errorMsg = 'ꕤ No se pudo conectar';
+                    let errorMsg = 'ꕢ No se pudo conectar';
                     const reasonStr = String(reason).toLowerCase();
                     if (reasonStr.includes('401')) {
-                        errorMsg = 'ꕤ Código inválido o expirado';
+                        errorMsg = 'ꕢ Código inválido o expirado';
                     } else if (reasonStr.includes('403')) {
-                        errorMsg = 'ꕤ WhatsApp bloqueó la conexión. Espera unos minutos.';
+                        errorMsg = 'ꕢ WhatsApp bloqueó la conexión. Espera unos minutos.';
                     } else if (reasonStr.includes('428')) {
-                        errorMsg = 'ꕤ Demasiados dispositivos vinculados (máx 4)';
+                        errorMsg = 'ꕢ Demasiados dispositivos vinculados (máx 4)';
                     } else if (reasonStr.includes('515')) {
-                        errorMsg = 'ꕤ Requiere reinicio. Intenta de nuevo.';
+                        errorMsg = 'ꕢ Requiere reinicio. Intenta de nuevo.';
                     }
                     mainSock.sendMessage(chatId, { text: errorMsg }).catch(() => { });
                 } else {
@@ -118,25 +118,25 @@ export class JadibotManager {
             });
             logger.info('[Jadibot] Starting login with OTP for: ' + cleanPhone);
             await subbotInstance.login('otp');
-            return { success: true, message: 'ꕤ Generando código...' };
+            return { success: true, message: 'ꕢ Generando código...' };
         } catch (error) {
             logger.error('[Jadibot] Error:', error.message);
             this.pendingConnections.delete(userId);
-            return { success: false, message: 'ꕤ Error: ' + error.message };
+            return { success: false, message: 'ꕢ Error: ' + error.message };
         }
     }
     async startWithQR(code, chatId, mainSock) {
         const codeData = this.codes.get(code);
         if (!codeData) {
-            return { success: false, message: 'ꕤ Código inválido o expirado' };
+            return { success: false, message: 'ꕢ Código inválido o expirado' };
         }
         const userId = codeData.userId;
         const cleanUserId = userId.split('@')[0];
         if (this.subbots.has(userId)) {
-            return { success: false, message: 'ꕤ Ya tienes un sub-bot activo' };
+            return { success: false, message: 'ꕢ Ya tienes un sub-bot activo' };
         }
         if (this.pendingConnections.has(userId)) {
-            return { success: false, message: 'ꕤ Ya hay una conexión en proceso' };
+            return { success: false, message: 'ꕢ Ya hay una conexión en proceso' };
         }
         this.pendingConnections.set(userId, { startTime: Date.now() });
         try {
@@ -151,7 +151,7 @@ export class JadibotManager {
                 if (!isConnected) {
                     this.pendingConnections.delete(userId);
                     subbotInstance.disconnect?.();
-                    mainSock.sendMessage(chatId, { text: 'ꕤ Tiempo agotado' }).catch(() => { });
+                    mainSock.sendMessage(chatId, { text: 'ꕢ Tiempo agotado' }).catch(() => { });
                 }
             }, 2 * 60 * 1000);
             subbotInstance.on('qr', async (qr) => {
@@ -173,7 +173,7 @@ export class JadibotManager {
                     uuid: subbotUUID
                 });
                 await mainSock.sendMessage(chatId, {
-                    text: `ꕥ Sub-bot conectado\n\n➜ ${cleanUserId}`
+                    text: `ꕣ Sub-bot conectado\n\n➜ ${cleanUserId}`
                 });
                 subbotInstance.ws?.ev.on('messages.upsert', async ({ messages }) => {
                     const m = messages[0];
@@ -187,7 +187,7 @@ export class JadibotManager {
                 clearTimeout(timeout);
                 if (!isConnected) {
                     this.pendingConnections.delete(userId);
-                    mainSock.sendMessage(chatId, { text: 'ꕤ No se pudo conectar' }).catch(() => { });
+                    mainSock.sendMessage(chatId, { text: 'ꕢ No se pudo conectar' }).catch(() => { });
                 } else {
                     const reasonStr = String(reason).toLowerCase();
                     const isFatal = reasonStr.includes('401') || reasonStr.includes('403') || reasonStr.includes('428');
@@ -199,11 +199,11 @@ export class JadibotManager {
                 }
             });
             await subbotInstance.login('qr');
-            return { success: true, message: 'ꕤ Generando QR...' };
+            return { success: true, message: 'ꕢ Generando QR...' };
         } catch (error) {
             logger.error('[Jadibot] QR Error:', error.message);
             this.pendingConnections.delete(userId);
-            return { success: false, message: 'ꕤ Error: ' + error.message };
+            return { success: false, message: 'ꕢ Error: ' + error.message };
         }
     }
     stopSubbot(userId) {
@@ -211,18 +211,18 @@ export class JadibotManager {
         if (!subbotData) {
             if (this.pendingConnections.has(userId)) {
                 this.pendingConnections.delete(userId);
-                return { success: true, message: 'ꕥ Vinculación cancelada' };
+                return { success: true, message: 'ꕣ Vinculación cancelada' };
             }
-            return { success: false, message: 'ꕤ No tienes un sub-bot activo' };
+            return { success: false, message: 'ꕢ No tienes un sub-bot activo' };
         }
         try {
             if (subbotData.bot) {
                 subbotData.bot.disconnect?.();
             }
             this.subbots.delete(userId);
-            return { success: true, message: 'ꕥ Sub-bot detenido' };
+            return { success: true, message: 'ꕣ Sub-bot detenido' };
         } catch (error) {
-            return { success: false, message: 'ꕤ Error al detener' };
+            return { success: false, message: 'ꕢ Error al detener' };
         }
     }
     async loadSessions(mainSock) {

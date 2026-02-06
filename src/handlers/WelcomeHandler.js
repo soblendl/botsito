@@ -78,7 +78,7 @@ export class WelcomeHandler {
         const fallback = 'https://i.pinimg.com/736x/70/dd/61/70dd612c65034b88ebf474a52ef70b46.jpg';
         try {
             const timeout = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('Timeout getting profile picture')), 5000);
+                setTimeout(() => reject(new Error('Timeout getting profile picture')), 2000);
             });
 
             const ppUrl = await Promise.race([
@@ -145,7 +145,7 @@ export class WelcomeHandler {
 ༘⋆✿ *Adiós* de ${groupName}!
     » @${userName}
 ૮ ․ ․ ྀིა Esperamos que vuelvas pronto por aquí.
-> 𖣂 Kaoruko Waguri Bot
+> 𖣂 Shoko Nishimiya Bot
 `.trim());
 
         await bot.sendMessage(chatId, {

@@ -15,32 +15,32 @@ export default {
         if (isGroup) {
             const groupData = await dbService.getGroup(chatId);
             if (!groupData?.settings?.nsfw) {
-                return await ctx.reply(styleText('ꕤ Los comandos NSFW están desactivados en este grupo.'));
+                return await ctx.reply(styleText('ꕢ Los comandos NSFW están desactivados en este grupo.'));
             }
         }
 
         try {
-            await ctx.reply(styleText('ꕤ Cargando imagen hentai...'));
+            await ctx.reply(styleText('ꕢ Cargando imagen hentai...'));
             const links = await loadLinks('hentai');
 
             if (links.length === 0) {
-                return await ctx.reply(styleText('ꕤ Error al cargar la base de datos de imágenes.'));
+                return await ctx.reply(styleText('ꕢ Error al cargar la base de datos de imágenes.'));
             }
 
             const randomUrl = getRandomLink(links);
             const buffer = await downloadMedia(randomUrl);
 
             if (!buffer) {
-                return await ctx.reply(styleText('ꕤ Error al descargar la imagen.'));
+                return await ctx.reply(styleText('ꕢ Error al descargar la imagen.'));
             }
 
             await conn.sendMessage(chatId, {
                 image: buffer,
-                caption: styleText('ꕥ Imagen hentai aleatoria')
+                caption: styleText('ꕣ Imagen hentai aleatoria')
             });
         } catch (error) {
             logger.error('[HIMAGES] Error:', error);
-            await ctx.reply(styleText('ꕤ Ocurrió un error al procesar la solicitud.'));
+            await ctx.reply(styleText('ꕢ Ocurrió un error al procesar la solicitud.'));
         }
     }
 };

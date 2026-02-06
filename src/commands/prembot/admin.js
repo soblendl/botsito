@@ -9,14 +9,14 @@ export default {
         const ownerJid = OWNER_JID || '639972367773@s.whatsapp.net';
 
         if (sender !== ownerJid) {
-            return await ctx.reply(styleText('ꕤ Este comando es solo para el owner.'));
+            return await ctx.reply(styleText('ꕢ Este comando es solo para el owner.'));
         }
 
         const subCommand = args[0]?.toLowerCase();
 
         if (!subCommand || subCommand === 'help') {
             return await ctx.reply(styleText(
-                `ꕥ *PREMBOT ADMIN*\n\n` +
+                `ꕣ *PREMBOT ADMIN*\n\n` +
                 `*Comandos:*\n\n` +
                 `> *#padmin list*\n` +
                 `>   Ver todos los prembots\n\n` +
@@ -39,9 +39,9 @@ export default {
         if (subCommand === 'list') {
             const prembots = tokenService?.getAllPrembots() || [];
             if (prembots.length === 0) {
-                return await ctx.reply(styleText('ꕤ No hay prembots registrados.'));
+                return await ctx.reply(styleText('ꕢ No hay prembots registrados.'));
             }
-            let message = `ꕥ *PREMBOTS ACTIVOS*\n\n`;
+            let message = `ꕣ *PREMBOTS ACTIVOS*\n\n`;
             for (const p of prembots) {
                 const status = p.banned ? '⛔' : (p.daysRemaining > 0 ? '🟢' : '🔴');
                 const user = p.userId.split('@')[0];
@@ -57,12 +57,12 @@ export default {
             const mentioned = ctx.msg?.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
             const duration = args[2] || '30d';
             if (!mentioned) {
-                return await ctx.reply(styleText('ꕤ Debes mencionar al usuario.\n> Ej: *#padmin gentoken* <@mention> 30d'));
+                return await ctx.reply(styleText('ꕢ Debes mencionar al usuario.\n> Ej: *#padmin gentoken* <@mention> 30d'));
             }
             const token = tokenService?.createToken(mentioned, duration);
             if (token) {
                 await ctx.reply(styleText(
-                    `ꕥ *Token Generado*\n\n` +
+                    `ꕣ *Token Generado*\n\n` +
                     `> Usuario » @${mentioned.split('@')[0]}\n` +
                     `> Duración » ${duration}\n` +
                     `> Token »\n\`${token.id}\`\n\n` +
@@ -71,7 +71,7 @@ export default {
                 );
                 try {
                     await ctx.bot.sendMessage(mentioned, {
-                        text: styleText(`ꕥ *PREMBOT TOKEN*\n\n` +
+                        text: styleText(`ꕣ *PREMBOT TOKEN*\n\n` +
                             `Tu token premium:\n` +
                             `\`${token.id}\`\n\n` +
                             `*Para activar:*\n` +
@@ -82,7 +82,7 @@ export default {
                     logger.info('Could not send token to user directly');
                 }
             } else {
-                await ctx.reply(styleText('ꕤ Error generando token.'));
+                await ctx.reply(styleText('ꕢ Error generando token.'));
             }
             return;
         }
@@ -91,19 +91,19 @@ export default {
             const mentioned = ctx.msg?.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
             const reason = args.slice(2).join(' ') || 'Comportamiento inapropiado';
             if (!mentioned) {
-                return await ctx.reply(styleText('ꕤ Debes mencionar al usuario.\n> Ej: *#padmin ban* <@mention> razón'));
+                return await ctx.reply(styleText('ꕢ Debes mencionar al usuario.\n> Ej: *#padmin ban* <@mention> razón'));
             }
             const result = tokenService?.banPrembot(mentioned, reason);
             prembotManager?.stopPrembot(mentioned);
             if (result) {
                 await ctx.reply(styleText(
-                    `ꕥ *Prembot Baneado*\n\n` +
+                    `ꕣ *Prembot Baneado*\n\n` +
                     `> @${mentioned.split('@')[0]}\n` +
                     `> Razón » ${reason}`),
                     { mentions: [mentioned] }
                 );
             } else {
-                await ctx.reply(styleText('ꕤ Usuario no encontrado.'));
+                await ctx.reply(styleText('ꕢ Usuario no encontrado.'));
             }
             return;
         }
@@ -111,17 +111,17 @@ export default {
         if (subCommand === 'unban') {
             const mentioned = ctx.msg?.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
             if (!mentioned) {
-                return await ctx.reply(styleText('ꕤ Debes mencionar al usuario.'));
+                return await ctx.reply(styleText('ꕢ Debes mencionar al usuario.'));
             }
             const result = tokenService?.unbanPrembot(mentioned);
             if (result) {
                 await ctx.reply(styleText(
-                    `ꕥ *Prembot Desbaneado*\n\n` +
+                    `ꕣ *Prembot Desbaneado*\n\n` +
                     `> @${mentioned.split('@')[0]}`),
                     { mentions: [mentioned] }
                 );
             } else {
-                await ctx.reply(styleText('ꕤ Usuario no encontrado.'));
+                await ctx.reply(styleText('ꕢ Usuario no encontrado.'));
             }
             return;
         }
@@ -129,17 +129,17 @@ export default {
         if (subCommand === 'stop') {
             const mentioned = ctx.msg?.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
             if (!mentioned) {
-                return await ctx.reply(styleText('ꕤ Debes mencionar al usuario.'));
+                return await ctx.reply(styleText('ꕢ Debes mencionar al usuario.'));
             }
             const result = prembotManager?.stopPrembot(mentioned);
             if (result?.success) {
                 await ctx.reply(styleText(
-                    `ꕥ *Prembot Detenido*\n\n` +
+                    `ꕣ *Prembot Detenido*\n\n` +
                     `> @${mentioned.split('@')[0]}`),
                     { mentions: [mentioned] }
                 );
             } else {
-                await ctx.reply(styleText(result?.message || 'ꕤ Error al detener'));
+                await ctx.reply(styleText(result?.message || 'ꕢ Error al detener'));
             }
             return;
         }
@@ -154,7 +154,7 @@ export default {
             const revenue = completedPayments.length * 2;
 
             await ctx.reply(styleText(
-                `ꕥ *PREMBOT STATS*\n\n` +
+                `ꕣ *PREMBOT STATS*\n\n` +
                 `*Prembots:*\n` +
                 `> • Total » ${prembots.length}\n` +
                 `> • Activos » ${activePrembots.length}\n` +
@@ -169,6 +169,6 @@ export default {
             return;
         }
 
-        await ctx.reply(styleText('ꕤ Comando no reconocido.\n> Usa *#padmin help*'));
+        await ctx.reply(styleText('ꕢ Comando no reconocido.\n> Usa *#padmin help*'));
     }
 };

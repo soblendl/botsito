@@ -4,7 +4,7 @@ export default {
     async execute(sock, m, { chatId, sender, args }) {
         if (args.length === 0) {
             return await sock.sendMessage(chatId, {
-                text: styleText('ꕤ Debes especificar el nombre del personaje.\nUso: #delwaifu <personaje>')
+                text: styleText('ꕢ Debes especificar el nombre del personaje.\nUso: #delwaifu <personaje>')
             });
         }
         const charName = args.join(' ');
@@ -15,13 +15,13 @@ export default {
         );
         if (charIndex === -1) {
             return await sock.sendMessage(chatId, {
-                text: styleText('ꕤ No tienes ese personaje en tu harem.')
+                text: styleText('ꕢ No tienes ese personaje en tu harem.')
             });
         }
         const character = characters[charIndex];
         characters.splice(charIndex, 1);
         await sock.sendMessage(chatId, {
-            text: styleText(`ꕥ Has eliminado a ${character.name} de tu harem.`)
+            text: styleText(`ꕣ Has eliminado a ${character.name} de tu harem.`)
         });
     }
 };

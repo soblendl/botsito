@@ -20,7 +20,7 @@ export default {
         }
 
         try {
-            await ctx.reply(styleText('ꕥ Buscando letra...'));
+            await ctx.reply(styleText('ꕣ Buscando letra...'));
             const response = await axios.post("https://api-sky.ultraplus.click/tools/lyrics",
                 { text: text.trim() },
                 { headers: { apikey: "sk_d5a5dec0-ae72-4c87-901c-cccce885f6e6" } }
@@ -40,7 +40,7 @@ export default {
             const image = result.image || result.thumbnail || '';
             const lyrics = result.lyrics;
 
-            const caption = `ꕥ *Lyrics Found!*\n\n` +
+            const caption = `ꕣ *Lyrics Found!*\n\n` +
                 `> *Título* » ${title}\n` +
                 `> *Artista* » ${artist}\n\n` +
                 `──────────────────\n\n` +
@@ -58,7 +58,7 @@ export default {
             }
         } catch (error) {
             logger.error('[Lyrics] Error:', error);
-            await ctx.reply(styleText('ꕥ Ocurrió un error al buscar la letra. Verifica que el servicio esté disponible.'));
+            await ctx.reply(styleText('ꕣ Ocurrió un error al buscar la letra. Verifica que el servicio esté disponible.'));
         }
     }
 };

@@ -3,6 +3,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { DATA_PATHS } from '../../config/data.js';
 import { globalLogger as logger } from '../../utils/logger.js';
+import { normalizeUserId } from '../../utils/permissions.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 class GachaService {
@@ -74,6 +76,13 @@ class GachaService {
         const indices = this.genderIndex.get(gender.toLowerCase()) || [];
         return indices.map(i => this.characters[i]);
     }
+    getByOwner(userId) {
+        const normalizedUserId = normalizeUserId(userId);
+        return this.characters.filter(c => {
+            const normalizedOwner = normalizeUserId(c.owner);
+            return normalizedOwner === normalizedUserId;
+        });
+    }
     getRandomCharacter(filter = null) {
         let pool = this.characters;
         if (filter) {
@@ -133,15 +142,41 @@ class GachaService {
             indexed: this.characterIndex.size
         };
     }
-
-    async gracefulShutdown() {
-        logger.info('ꕤ Guardando datos de GachaService antes de apagar...');
-        await this.save();
+    async claim(userId, characterId) {
+        const character = this.getById(characterId);
+        if (!character) throw new Error('Personaje no encontrado');
+        if (character.owner) throw new Error('El personaje ya tiene dueño');
+        character.owner = userId;
+        character.status = 'Ocupado';
+        await this.updateCharacter(characterId, {
+            owner: userId,
+            status: 'Ocupado'
+        });
         return true;
     }
-
+    async transferCharacter(characterId, newOwnerId) {
+        const character = this.getById(characterId);
+        if (!character) throw new Error('Personaje no encontrado');
+        const previousOwner = character.owner;
+        await this.updateCharacter(characterId, {
+            owner: newOwnerId,
+            user: newOwnerId
+        });
+        return { character, previousOwner };
+    }
+    vote(userId, characterId) {
+        const character = this.getById(characterId);
+        if (!character) {
+            return { success: false, message: 'Personaje no encontrado' };
+        }
+        if (!character.votes) character.votes = 0;
+        character.votes += 1;
+        character.value = (parseInt(character.value) || 0) + 10;
+        this.save().catch(err => logger.error('Error saving votes:', err));
+        return { success: true, character };
+    }
     async gracefulShutdown() {
-        logger.info('ꕤ Guardando datos de GachaService antes de apagar...');
+        logger.info('ꕢ Guardando datos de GachaService antes de apagar...');
         await this.save();
         return true;
     }

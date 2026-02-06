@@ -23,7 +23,7 @@ export default {
         const { args, reply, replyWithVideo } = ctx;
         if (args.length === 0) {
             return await reply(styleText(
-                `ꕤ *Uso incorrecto del comando*\\n\\n` +
+                `ꕢ *Uso incorrecto del comando*\\n\\n` +
                 `Ejemplo:\\n` +
                 `> #facebook https://www.facebook.com/watch?v=xxxxx\\n` +
                 `> #fb https://fb.watch/xxxxx`
@@ -31,15 +31,15 @@ export default {
         }
         const url = args[0];
         if (!url.match(/(facebook\.com|fb\.watch)/i)) {
-            return await reply(styleText('ꕤ Por favor ingresa un link válido de Facebook.'));
+            return await reply(styleText('ꕢ Por favor ingresa un link válido de Facebook.'));
         }
-        await reply(styleText('ꕥ Procesando tu video...'));
+        await reply(styleText('ꕣ Procesando tu video...'));
         try {
             const { hd, sd } = await fbvdl(url);
             const videoUrl = hd || sd;
             await replyWithVideo(videoUrl, {
                 caption: styleText(
-                    `ꕥ *Facebook Downloader*\\n\\n` +
+                    `ꕣ *Facebook Downloader*\\n\\n` +
                     `> ✿ *Calidad* » ${hd ? 'HD' : 'SD'}\\n` +
                     `> ✿ *Link original* » ${url}`
                 ),
@@ -47,7 +47,7 @@ export default {
             });
         } catch (error) {
             console.error('Error en comando facebook:', error);
-            await reply(styleText(`ꕤ Error: ${error.message}`));
+            await reply(styleText(`ꕢ Error: ${error.message}`));
         }
     }
 };

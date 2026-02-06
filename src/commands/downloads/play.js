@@ -1,11 +1,12 @@
 import yts from 'yt-search';
 import axios from 'axios';
+import https from 'https';
 import { styleText } from '../../utils/helpers.js';
 const tempStorage = {};
 const searchCache = new Map();
 const downloadCache = new Map();
 const tokenCache = new Map();
-const CACHE_DURATION = 10 * 60 * 1000; 
+const CACHE_DURATION = 10 * 60 * 1000;
 const DOWNLOAD_CACHE_DURATION = 30 * 60 * 1000;
 export default {
     commands: ['play', 'play2', 'playaudio', 'playvideo'],
@@ -27,41 +28,61 @@ export default {
             if (isAudio) {
                 const info = await ytMp3(userData.url);
                 if (info && info.media && info.media.audio) {
+                    await ctx.reply(styleText('⏳ Descargando audio...'));
+                    const audioStream = await axios({
+                        url: info.media.audio,
+                        method: 'GET',
+                        responseType: 'stream',
+                        timeout: 60000,
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                        },
+                        httpsAgent: new https.Agent({ rejectUnauthorized: false })
+                    });
+
                     await bot.sock.sendMessage(chatId, {
-                        audio: { url: info.media.audio },
+                        audio: { stream: audioStream.data },
                         mimetype: 'audio/mp4'
                     }, { quoted: ctx.msg });
-                    await ctx.reply(styleText(`ꕤ Audio enviado.`));
+                    await ctx.reply(styleText(`ꕢ Audio enviado.`));
                 } else {
-                    await ctx.reply(styleText('ꕤ No se pudo obtener el enlace de descarga del audio.'));
+                    await ctx.reply(styleText('ꕢ No se pudo obtener el enlace de descarga del audio.'));
                 }
             } else {
                 const info = await ytMp4(userData.url);
                 if (info && info.url) {
+                    await ctx.reply(styleText('⏳ Descargando video...'));
+                    const videoStream = await axios({
+                        url: info.url,
+                        method: 'GET',
+                        responseType: 'stream',
+                        timeout: 60000,
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                        },
+                        httpsAgent: new https.Agent({ rejectUnauthorized: false })
+                    });
+
                     await bot.sock.sendMessage(chatId, {
-                        video: { url: info.url },
+                        video: { stream: videoStream.data },
                         caption: styleText(`⟡ *${userData.title}*\n> ✦ Calidad: ${info.quality || '720p'}`),
                         fileName: `${cleanFileName(userData.title)}.mp4`,
                         mimetype: 'video/mp4'
                     }, { quoted: ctx.msg });
-                    await ctx.reply(styleText(`ꕤ Video enviado.`));
+                    await ctx.reply(styleText(`ꕢ Video enviado.`));
                 } else {
-                    await ctx.reply(styleText('ꕤ No se pudo obtener el enlace de descarga del video.'));
+                    await ctx.reply(styleText('ꕢ No se pudo obtener el enlace de descarga del video.'));
                 }
             }
         } catch (error) {
             console.error('Error downloading media:', error);
-            if (error.code === 'ENOSPC' || error.message?.includes('ENOSPC')) {
-                global.memoryManager?.forceCleanup();
-                return await ctx.reply(styleText('ꕤ Error de espacio/memoria. Intenta en unos segundos.'));
-            }
-            await ctx.reply(styleText(`ꕤ Error: ${error.message || 'Error desconocido'}`));
+            await ctx.reply(styleText(`ꕢ Error: ${error.message || 'Error desconocido'}`));
         }
     },
     async execute(ctx) {
         const { args, sender, bot, chatId, command } = ctx;
         if (args.length === 0) {
-            return await ctx.reply(styleText('ꕤ Debes ingresar el nombre de la canción.\n> Ejemplo: *#play Billie Eilish*'));
+            return await ctx.reply(styleText('ꕢ Debes ingresar el nombre de la canción.\n> Ejemplo: *#play Billie Eilish*'));
         }
         const query = args.join(' ');
         const isDirectAudio = command === 'playaudio';
@@ -70,10 +91,11 @@ export default {
             const searchResults = await getCachedSearch(query);
             const video = searchResults.videos[0];
             if (!video) {
-                return await ctx.reply(styleText('ꕤ No se encontraron resultados.'));
+                return await ctx.reply(styleText('ꕢ No se encontraron resultados.'));
             }
+            console.log(`[DEBUG] Video found: ${video.title} | Seconds: ${video.seconds} | Timestamp: ${video.timestamp}`);
             if (video.seconds > 600) {
-                return await ctx.reply(styleText('ꕤ El video supera los 10 minutos de duración. Usa un enlace más corto.'));
+                return await ctx.reply(styleText('ꕢ El video supera los 10 minutos de duración. Usa un enlace más corto.'));
             }
             const text = `╭──── *YOUTUBE* ────╮
 > ✎ *Título* » ${video.title}
@@ -108,11 +130,11 @@ export default {
                             mimetype: 'audio/mp4'
                         }, { quoted: ctx.msg });
                     } else {
-                        await ctx.reply(styleText('ꕤ No se pudo obtener el enlace de descarga del audio.'));
+                        await ctx.reply(styleText('ꕢ No se pudo obtener el enlace de descarga del audio.'));
                     }
                 } catch (error) {
                     console.error('Error downloading audio:', error);
-                    await ctx.reply(styleText(`ꕤ Error: ${error.message || 'Error desconocido'}`));
+                    await ctx.reply(styleText(`ꕢ Error: ${error.message || 'Error desconocido'}`));
                 }
                 return;
             }
@@ -131,11 +153,11 @@ export default {
                             mimetype: 'video/mp4'
                         }, { quoted: ctx.msg });
                     } else {
-                        await ctx.reply(styleText('ꕤ No se pudo obtener el enlace de descarga del video.'));
+                        await ctx.reply(styleText('ꕢ No se pudo obtener el enlace de descarga del video.'));
                     }
                 } catch (error) {
                     console.error('Error downloading video:', error);
-                    await ctx.reply(styleText(`ꕤ Error: ${error.message || 'Error desconocido'}`));
+                    await ctx.reply(styleText(`ꕢ Error: ${error.message || 'Error desconocido'}`));
                 }
                 return;
             }
@@ -169,12 +191,12 @@ Responde con:
                         sourceUrl: video.url
                     }
                 }
-            }, { quoted: ctx.msg }); 
+            }, { quoted: ctx.msg });
             const preCachePromise = preCacheDownloadToken(video.url);
             await Promise.all([sendMessagePromise, preCachePromise]);
         } catch (error) {
             console.error('Error in play command:', error);
-            await ctx.reply(styleText(`ꕤ Error al buscar: ${error.message}`));
+            await ctx.reply(styleText(`ꕢ Error al buscar: ${error.message}`));
         }
     }
 };
@@ -196,141 +218,50 @@ async function getCachedSearch(query) {
     return results;
 }
 async function preCacheDownloadToken(videoUrl) {
-    try {
-        const cfApiUrl = 'https://api.nekolabs.web.id/tools/bypass/cf-turnstile';
-        const cfPayload = {
-            url: 'https://ezconv.cc',
-            siteKey: '0x4AAAAAAAi2NuZzwS99-7op'
-        };
-        const { data: cfResponse } = await axios.post(cfApiUrl, cfPayload);
-        if (cfResponse.success && cfResponse.result) {
-            tokenCache.set(videoUrl, {
-                token: cfResponse.result,
-                timestamp: Date.now()
-            });
-        }
-    } catch (error) {
-        console.error('Error pre-caching token:', error);
-    }
+    
 }
+
 async function ytMp3(videoUrl) {
     try {
-        const cached = downloadCache.get(`mp3_${videoUrl}`);
-        if (cached && Date.now() - cached.timestamp < DOWNLOAD_CACHE_DURATION) {
-            return cached.data;
-        }
-        let captchaToken;
-        const tokenCached = tokenCache.get(videoUrl);
-        if (tokenCached && Date.now() - tokenCached.timestamp < 60000) { 
-            captchaToken = tokenCached.token;
-            tokenCache.delete(videoUrl); 
-        } else {
-            const cfApiUrl = 'https://api.nekolabs.web.id/tools/bypass/cf-turnstile';
-            const cfPayload = {
-                url: 'https://ezconv.cc',
-                siteKey: '0x4AAAAAAAi2NuZzwS99-7op'
+        const apiUrl = `https://kawpapi.vercel.app/api/download?query=${encodeURIComponent(videoUrl)}&format=mp3`;
+        const { data } = await axios.get(apiUrl);
+        
+        console.log('[DEBUG] ytMp3 API Response:', JSON.stringify(data, null, 2));
+
+        if (data && data.download_url) {
+            return {
+                media: { audio: data.download_url },
+                title: data.title || 'Audio',
+                cover: data.thumbnail || '',
+                author: { name: data.author || 'Desconocido' }
             };
-            const { data: cfResponse } = await axios.post(cfApiUrl, cfPayload);
-            if (!cfResponse.success || !cfResponse.result) {
-                throw new Error('No se pudo obtener el token de captcha');
-            }
-            captchaToken = cfResponse.result;
         }
-        const convertApiUrl = 'https://ds1.ezsrv.net/api/convert';
-        const convertPayload = {
-            url: videoUrl,
-            quality: '320', 
-            trim: false,
-            startT: 0,
-            endT: 0,
-            captchaToken: captchaToken
-        };
-        const { data: convertResponse } = await axios.post(convertApiUrl, convertPayload, {
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        if (convertResponse.status !== 'done') {
-            throw new Error(`La conversión falló. Estado: ${convertResponse.status}`);
-        }
-        const result = {
-            media: { audio: convertResponse.url },
-            title: convertResponse.title,
-            cover: null
-        };
-        downloadCache.set(`mp3_${videoUrl}`, {
-            data: result,
-            timestamp: Date.now()
-        });
-        if (downloadCache.size > 50) {
-            const oldestKey = [...downloadCache.keys()][0];
-            downloadCache.delete(oldestKey);
-        }
-        return result;
+        throw new Error("No se encontró el enlace de descarga.");
     } catch (error) {
-        throw new Error(error.response?.data ? JSON.stringify(error.response.data) : error.message);
+        console.error('Error in ytMp3:', error.message);
+        throw new Error(error.message || "Error al procesar MP3");
     }
 }
-const snKey = "dfcb6d76f2f6a9894gjkege8a4ab232222";
-const snAgent = "Mozilla/5.0 (Android 13; Mobile; rv:146.0) Gecko/146.0 Firefox/146.0";
-const snReferer = "https://y2down.cc/enSB/";
-const videoFormats = ['144', '240', '360', '720', '1080', '1440', '4k'];
-const audioFormats = ['mp3', 'm4a', 'webm', 'aacc', 'flac', 'apus', 'ogg', 'wav'];
+
 async function ytMp4(url, format = '720') {
-    if (!videoFormats.includes(format) && !audioFormats.includes(format)) {
-        throw new Error("Invalid format");
-    }
     try {
-        const cached = downloadCache.get(`mp4_${url}_${format}`);
-        if (cached && Date.now() - cached.timestamp < DOWNLOAD_CACHE_DURATION) {
-            return cached.data;
+        const apiUrl = `https://kawpapi.vercel.app/api/download?query=${encodeURIComponent(url)}&format=mp4`;
+        const { data } = await axios.get(apiUrl);
+        
+        console.log('[DEBUG] ytMp4 API Response:', JSON.stringify(data, null, 2));
+
+        if (data && data.download_url) {
+            return {
+                url: data.download_url,
+                quality: data.quality || format,
+                title: data.title || 'Video',
+                cover: data.thumbnail || '',
+                author: { name: data.author || 'Desconocido' }
+            };
         }
-        const initUrl = `https://p.savenow.to/ajax/download.php?copyright=0&format=${format}&url=${url}&api=${snKey}`;
-        const init = await fetch(initUrl, {
-            headers: {
-                "User-Agent": snAgent,
-                "Referer": snReferer
-            }
-        });
-        const data = await init.json();
-        if (!data.success) {
-            throw new Error("Failed to start download");
-        }
-        const id = data.id;
-        const progressUrl = `https://p.savenow.to/api/progress?id=${id}`;
-        let attempts = 0;
-        const maxAttempts = 20; 
-        const delayMs = 1500; 
-        while (attempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, delayMs));
-            attempts++;
-            const response = await fetch(progressUrl, {
-                headers: {
-                    "User-Agent": snAgent,
-                    "Referer": snReferer
-                }
-            });
-            const status = await response.json();
-            if (status.progress === 1000) {
-                const result = {
-                    url: status.download_url,
-                    quality: format,
-                    title: data.title || data.info?.title
-                };
-                downloadCache.set(`mp4_${url}_${format}`, {
-                    data: result,
-                    timestamp: Date.now()
-                });
-                if (downloadCache.size > 50) {
-                    const oldestKey = [...downloadCache.keys()][0];
-                    downloadCache.delete(oldestKey);
-                }
-                return result;
-            }
-        }
-        throw new Error("Timeout waiting for download");
+        throw new Error("No se encontró el enlace de descarga.");
     } catch (error) {
-        console.error('Error in ytMp4:', error);
+        console.error('Error in ytMp4:', error.message);
         throw new Error(error.message || "Error al descargar el video");
     }
 }

@@ -5,9 +5,9 @@ export default {
     async execute(ctx) {
         const subbots = jadibotManager.getSubbots();
         if (subbots.length === 0) {
-            return await ctx.reply(styleText('ꕤ No hay sub-bots activos actualmente.'));
+            return await ctx.reply(styleText('ꕢ No hay sub-bots activos actualmente.'));
         }
-        let message = `ꕤ *Sub-Bots Activos* (${subbots.length})\n\n`;
+        let message = `ꕢ *Sub-Bots Activos* (${subbots.length})\n\n`;
         subbots.forEach((bot, i) => {
             const phoneNumber = bot.userId.split('@')[0];
             message += `${i + 1}. @${phoneNumber}\n`;

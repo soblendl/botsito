@@ -4,8 +4,12 @@ import { fileURLToPath } from 'url';
 import { LocalDB } from '@imjxsx/localdb';
 import User from '../../models/User.js';
 import Group from '../../models/Group.js';
-import { userCache, groupCache } from '../../utils/DataCache.js';
+
 import { globalLogger as logger } from '../../utils/logger.js';
+
+
+const userCache = new Map();
+const groupCache = new Map();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const MONGODB_URI = "mongodb+srv://Vercel-Admin-soblend-redzmey-spaceworkflow:SOquhfF8HTxqFcTw@soblend-redzmey-spacewo.7aubqkc.mongodb.net/?retryWrites=true&w=majority";
@@ -111,7 +115,7 @@ class DatabaseService {
         return user;
     }
     async updateUser(userId, updates) {
-        userCache.invalidate(userId);
+        userCache.delete(userId);
         const result = await User.findOneAndUpdate(
             { id: userId },
             { $set: updates },
@@ -165,7 +169,7 @@ class DatabaseService {
         return group;
     }
     async updateGroup(groupId, updates) {
-        groupCache.invalidate(groupId);
+        groupCache.delete(groupId);
         const result = await Group.findOneAndUpdate(
             { id: groupId },
             { $set: updates },
@@ -178,19 +182,23 @@ class DatabaseService {
         return Group.find({}).lean();
     }
     async deleteUser(userId) {
-        userCache.invalidate(userId);
+        userCache.delete(userId);
         return User.deleteOne({ id: userId });
     }
     async deleteGroup(groupId) {
-        groupCache.invalidate(groupId);
+        groupCache.delete(groupId);
         return Group.deleteOne({ id: groupId });
     }
     async getCacheStats() {
         return {
-            users: userCache.getStats(),
-            groups: groupCache.getStats()
+            users: { size: userCache.size },
+            groups: { size: groupCache.size }
         };
     }
+    async getUserCount() {
+        return User.countDocuments();
+    }
+
     async getStats() {
         const [userCount, groupCount] = await Promise.all([
             User.countDocuments(),
@@ -203,6 +211,42 @@ class DatabaseService {
         groupCache.clear();
         await mongoose.disconnect();
         logger.info('𖤐 Desconectado de MongoDB');
+    }
+
+    markDirty() {
+        // No-op for MongoDB adaptation
+        return true;
+    }
+
+    async getTopUsers(limit = 10) {
+        try {
+            const users = await User.find({})
+                .select('id name economy')
+                .lean()
+                .exec();
+
+            // Calculate total and sort
+            const usersWithTotal = users.map(user => {
+                const coins = user.economy?.coins || 0;
+                const bank = user.economy?.bank || 0;
+                return {
+                    id: user.id,
+                    name: user.name || 'Usuario',
+                    coins: coins,
+                    bank: bank,
+                    total: coins + bank
+                };
+            });
+
+            // Sort by total descending
+            usersWithTotal.sort((a, b) => b.total - a.total);
+
+            // Return top N
+            return usersWithTotal.slice(0, limit);
+        } catch (error) {
+            logger.error('[DatabaseService] Error getting top users:', error);
+            return [];
+        }
     }
 }
 export default DatabaseService;

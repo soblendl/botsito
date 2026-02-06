@@ -2,14 +2,14 @@ import os from 'os';
 import { EventEmitter } from 'events';
 import { globalLogger as logger } from './logger.js';
 export const MEMORY_LIMITS = {
-    MAX_DOWNLOAD_SIZE: 50 * 1024 * 1024,
-    MAX_BUFFER_SIZE: 30 * 1024 * 1024,
-    CRITICAL_FREE_MEMORY: 150 * 1024 * 1024,
-    WARNING_FREE_MEMORY: 250 * 1024 * 1024,
-    MAX_HEAP_USAGE_PERCENT: 75,
-    CLEANUP_INTERVAL: 5000,
-    MONITOR_INTERVAL: 3000,
-    BUFFER_TTL: 10000
+    MAX_DOWNLOAD_SIZE: 100 * 1024 * 1024, 
+    MAX_BUFFER_SIZE: 50 * 1024 * 1024,
+    CRITICAL_FREE_MEMORY: 50 * 1024 * 1024, 
+    WARNING_FREE_MEMORY: 100 * 1024 * 1024, 
+    MAX_HEAP_USAGE_PERCENT: 95,
+    CLEANUP_INTERVAL: 30000,
+    MONITOR_INTERVAL: 10000,
+    BUFFER_TTL: 30000
 };
 class MemoryManager extends EventEmitter {
     constructor() {
@@ -58,37 +58,21 @@ class MemoryManager extends EventEmitter {
     }
     canProcessDownload(estimatedSize = 0) {
         const status = this.getMemoryStatus();
-        if (status.isCritical) {
-            logger.warn(`[MemoryManager] Rechazado por memoria crítica. Libre: ${this.formatBytes(status.freeMemory)} < ${this.formatBytes(MEMORY_LIMITS.CRITICAL_FREE_MEMORY)}`);
-            this.stats.rejectedByMemory++;
-            return {
-                allowed: false,
-                reason: 'CRITICAL_MEMORY',
-                message: 'ꕤ Memoria crítica en servidor (muy poca RAM libre).'
-            };
-        }
+        
+
         if (estimatedSize > MEMORY_LIMITS.MAX_DOWNLOAD_SIZE) {
             logger.warn(`[MemoryManager] Rechazado por tamaño. Est: ${this.formatBytes(estimatedSize)} > Max: ${this.formatBytes(MEMORY_LIMITS.MAX_DOWNLOAD_SIZE)}`);
             this.stats.rejectedBySize++;
             return {
                 allowed: false,
                 reason: 'FILE_TOO_LARGE',
-                message: `ꕤ Archivo muy grande (máx ${this.formatBytes(MEMORY_LIMITS.MAX_DOWNLOAD_SIZE)})`
+                message: `ꕢ Archivo muy grande (máx ${this.formatBytes(MEMORY_LIMITS.MAX_DOWNLOAD_SIZE)})`
             };
         }
-        if (status.heapPercent > MEMORY_LIMITS.MAX_HEAP_USAGE_PERCENT) {
-            this.forceCleanup();
-            const newStatus = this.getMemoryStatus();
-            if (newStatus.heapPercent > MEMORY_LIMITS.MAX_HEAP_USAGE_PERCENT) {
-                logger.warn(`[MemoryManager] Rechazado por Heap. Uso: ${newStatus.heapPercent}% > ${MEMORY_LIMITS.MAX_HEAP_USAGE_PERCENT}%`);
-                this.stats.rejectedByMemory++;
-                return {
-                    allowed: false,
-                    reason: 'HIGH_HEAP_USAGE',
-                    message: 'ꕤ Servidor sobrecargado (Heap Lleno).'
-                };
-            }
-        }
+
+        
+        
+
         const activeSize = this.getActiveBuffersSize();
         if (this.activeBuffers.size < 5) {
             return {
@@ -101,7 +85,7 @@ class MemoryManager extends EventEmitter {
             return {
                 allowed: false,
                 reason: 'TOO_MANY_BUFFERS',
-                message: 'ꕤ Demasiadas descargas simultáneas.'
+                message: 'ꕢ Demasiadas descargas simultáneas.'
             };
         }
         return {

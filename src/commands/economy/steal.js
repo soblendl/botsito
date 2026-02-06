@@ -6,7 +6,7 @@ export default {
         if (ctx.isGroup) {
             const groupData = await ctx.dbService.getGroup(ctx.chatId);
             if (!groupData?.settings?.economy) {
-                return await ctx.reply(styleText('ꕤ El sistema de economía está desactivado en este grupo.'));
+                return await ctx.reply(styleText('ꕢ El sistema de economía está desactivado en este grupo.'));
             }
         }
 
@@ -23,21 +23,21 @@ export default {
         }
 
         if (!target) {
-            return await ctx.reply(styleText('ꕤ Debes mencionar a un usuario.\nUso: *#steal* @usuario'));
+            return await ctx.reply(styleText('ꕢ Debes mencionar a un usuario.\nUso: *#steal* @usuario'));
         }
 
-        // Fix LID issues
+        
         if (target.includes('@lid')) {
-            // We can't easily resolve LID to JID without context, but if the user passed a number in args, we use that.
-            // If it came from mentions array, it might be an LID if the user has no contact name.
-            // We'll rely on dbService to handle it or error out gracefully.
-            // Ideally extractMentions should return JIDs, but Baileys sometimes gives LIDs.
+            
+            
+            
+            
             const participant = ctx.msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.find(j => j.includes('@s.whatsapp.net'));
             if (participant) target = participant;
         }
 
         if (target === ctx.sender) {
-            return await ctx.reply(styleText('ꕤ No puedes robarte a ti mismo.'));
+            return await ctx.reply(styleText('ꕢ No puedes robarte a ti mismo.'));
         }
 
         const userData = (await ctx.dbService.getUser(ctx.sender))?.economy || {};
@@ -59,7 +59,7 @@ export default {
             });
 
             await ctx.reply(
-                styleText(`ꕥ Robaste *¥${formatNumber(stolen)}* coins a @${target.split('@')[0]}`),
+                styleText(`ꕣ Robaste *¥${formatNumber(stolen)}* coins a @${target.split('@')[0]}`),
                 { mentions: [target] }
             );
         } else {
@@ -70,7 +70,7 @@ export default {
             });
 
             await ctx.reply(
-                styleText(`ꕤ *Te atraparon!*\n\n` +
+                styleText(`ꕢ *Te atraparon!*\n\n` +
                     `Intentaste robar a @${target.split('@')[0]} pero te atraparon.\n` +
                     `> ✿ Multa » *¥${formatNumber(fine)}* coins\n` +
                     `> ✿ Tu balance » *¥${formatNumber(Math.max(0, userData.coins - fine))}* coins`),

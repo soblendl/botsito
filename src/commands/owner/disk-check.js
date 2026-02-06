@@ -70,7 +70,7 @@ async function getDirectorySize(dirPath) {
             }
         }
     } catch (e) {
-        // Ignore permission errors etc
+        
     }
     return size;
 }

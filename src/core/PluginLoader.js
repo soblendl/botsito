@@ -13,7 +13,7 @@ export class PluginLoader {
     }
 
     async loadCommands(commandsDir) {
-        logger.info(`ꕤ Iniciando carga de comandos desde ${commandsDir}...`);
+        logger.info(`ꕢ Iniciando carga de comandos desde ${commandsDir}...`);
         const categories = fs.readdirSync(commandsDir, { withFileTypes: true })
             .filter(dirent => dirent.isDirectory())
             .map(dirent => dirent.name);
@@ -33,7 +33,7 @@ export class PluginLoader {
                     await this.loadPlugin(filePath, file, category);
                     totalCommands++;
                 } catch (error) {
-                    logger.error(`ꕤ Error cargando ${category}/${file}:`, error.message);
+                    logger.error(`ꕢ Error cargando ${category}/${file}:`, error.message);
                 }
             }
         }
@@ -44,13 +44,13 @@ export class PluginLoader {
                 await this.loadPlugin(filePath, file, 'general');
                 totalCommands++;
             } catch (error) {
-                logger.error(`ꕤ Error cargando ${file}:`, error.message);
+                logger.error(`ꕢ Error cargando ${file}:`, error.message);
             }
         }
 
-        logger.info(`ꕥ ${totalCommands} comandos cargados exitosamente`);
-        logger.info(`ꕥ ${this.commandMap.size} comandos registrados`);
-        logger.info(`ꕥ ${this.beforeHandlers.length} before handlers registrados`);
+        logger.info(`ꕣ ${totalCommands} comandos cargados exitosamente`);
+        logger.info(`ꕣ ${this.commandMap.size} comandos registrados`);
+        logger.info(`ꕣ ${this.beforeHandlers.length} before handlers registrados`);
 
         return {
             commandMap: this.commandMap,
@@ -86,7 +86,7 @@ export class PluginLoader {
             });
         }
 
-        logger.info(`ꕥ [${category}] ${fileName} cargado`);
+        logger.info(`ꕣ [${category}] ${fileName} cargado`);
     }
 
     getCommand(commandName) {

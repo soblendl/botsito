@@ -8,10 +8,10 @@ export default {
         const users = await dbService.getTopUsers(10);
 
         if (users.length === 0) {
-            return reply('ꕤ No hay usuarios con coins en este ranking.');
+            return reply('ꕢ No hay usuarios con coins en este ranking.');
         }
 
-        let message = 'ꕥ Ranking Global de Economía\n\n';
+        let message = 'ꕣ Ranking Global de Economía\n\n';
         message += '➭ Top 10 Ricachones\n\n';
 
         let groupMetadata = null;
@@ -41,7 +41,7 @@ export default {
                         displayName = contact.notify || contact.name || contact.verifiedName || contact.pushname;
                     }
                 } catch (e) {
-                    // Silent fail, just use ID
+
                 }
             }
 
@@ -51,16 +51,20 @@ export default {
             return { ...user, displayName };
         }));
 
+        const mentions = [];
         usersWithNames.forEach((user, i) => {
             const medal = i === 0 ? '❶' : i === 1 ? '❷' : i === 2 ? '❸' : `${i + 1}.`;
+            const userNumber = user.id.split('@')[0];
             const name = user.displayName;
-            message += `${medal} \`${name}\`\n`;
+            // Use mention format
+            message += `${medal} @${userNumber}\n`;
             message += `> ⛃ Coins » *¥${formatNumberLarge(user.coins)}*\n`;
             message += `> ❖ Banco » *¥${formatNumberLarge(user.bank)}*\n`;
             message += `> ✧ Total » *¥${formatNumberLarge(user.total)}*\n\n`;
+            mentions.push(user.id);
         });
 
         message += '💫 _Sigue esforzándote!_';
-        await reply(styleText(message));
+        await reply(styleText(message), { mentions });
     }
 };

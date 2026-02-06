@@ -17,8 +17,8 @@ const GroupSchema = new mongoose.Schema({
     primaryBot: { type: String, default: null }
 }, { strict: false });
 
-// Índices para mejor rendimiento
-// GroupSchema.index({ id: 1 }, { unique: true });
+
+
 GroupSchema.index({ 'settings.welcome': 1 });
 GroupSchema.index({ 'settings.alerts': 1 });
 

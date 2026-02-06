@@ -283,11 +283,11 @@ class TokenService {
                         custom_id: userId
                     }],
                     application_context: {
-                        brand_name: 'Kaoruko Waguri Bot',
+                        brand_name: 'Shoko Nishimiya Bot',
                         landing_page: 'BILLING',
                         user_action: 'PAY_NOW',
-                        return_url: 'https://example.com/success',
-                        cancel_url: 'https://example.com/cancel'
+                        return_url: 'https://soblend-paypal.vercel.app/success',
+                        cancel_url: 'https://soblend-paypal.vercel.app/error'
                     }
                 })
             });
@@ -310,6 +310,23 @@ class TokenService {
         }
     }
 
+    async getPayPalOrder(orderId) {
+        try {
+            const accessToken = await this.getPayPalAccessToken();
+            const response = await fetch(`${this.paypal.baseUrl}/v2/checkout/orders/${orderId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            return await response.json();
+        } catch (error) {
+            logger.error('PayPal Get Order Error:', error);
+            return null;
+        }
+    }
+
     async capturePayPalOrder(orderId) {
         try {
             const accessToken = await this.getPayPalAccessToken();
@@ -321,21 +338,49 @@ class TokenService {
                 }
             });
 
-            const capture = await response.json();
-            const payment = this.data.payments.find(p => p.orderId === orderId);
+            let capture = await response.json();
+
+            // Handle "Order already captured" (HTTP 422) or generic failure
+            if (!response.ok) {
+                const orderDetails = await this.getPayPalOrder(orderId);
+                if (orderDetails && orderDetails.status === 'COMPLETED') {
+                    capture = orderDetails; // Use order details as capture result
+                } else {
+                    return { success: false, error: capture.message || 'Error capturando pago' };
+                }
+            }
+
+            let payment = this.data.payments.find(p => p.orderId === orderId);
+
+            // Recover payment data if missing (e.g. wiped tokens.json)
+            if (!payment && capture.status === 'COMPLETED') {
+                const userId = capture.purchase_units?.[0]?.custom_id || 'unknown';
+                payment = {
+                    orderId: orderId,
+                    userId: userId,
+                    status: 'COMPLETED',
+                    createdAt: Date.now(),
+                    capturedAt: Date.now(),
+                    amount: parseFloat(capture.purchase_units?.[0]?.amount?.value || this.paypal.price)
+                };
+                this.data.payments.push(payment);
+            }
 
             if (payment) {
                 payment.status = capture.status;
-                payment.capturedAt = Date.now();
-                if (capture.status === 'COMPLETED') {
-                    const token = this.createToken(payment.userId, '30d');
+                if (!payment.capturedAt) payment.capturedAt = Date.now();
+
+                if (capture.status === 'COMPLETED' && !payment.tokenId) {
+                    const token = this.createToken(payment.userId || 'unknown', '30d');
                     payment.tokenId = token.id;
+                    logger.info(`Ticket recuperado/creado para ${payment.userId}: ${token.id}`);
                 }
                 this.markDirty();
             }
 
             return { success: capture.status === 'COMPLETED', capture };
         } catch (error) {
+            logger.error('Capture Error:', error);
             return { success: false, error: error.message };
         }
     }

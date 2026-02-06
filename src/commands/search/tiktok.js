@@ -11,22 +11,22 @@ export default {
         const conn = bot?.sock;
 
         if (!text) {
-            return await reply(styleText('ꕤ Por favor escribe qué videos quieres buscar.\nEjemplo: #ttss gatos graciosos'));
+            return await reply(styleText('ꕢ Por favor escribe qué videos quieres buscar.\nEjemplo: #ttss gatos graciosos'));
         }
 
         try {
-            const apiUrl = `https://api.stellarwa.xyz/search/tiktok?query=${encodeURIComponent(text)}&key=stellar-20J4F8hk`;
+            const apiUrl = `https://api.stellarwa.xyz/search/tiktok?query=${encodeURIComponent(text)}&key=stellar-CEpNm0hd`;
             const response = await axios.get(apiUrl);
             const data = response.data;
 
             if (!data || !data.status || !data.data || !Array.isArray(data.data) || data.data.length === 0) {
-                return await reply(styleText('ꕤ No encontré videos para tu búsqueda.'));
+                return await reply(styleText('ꕢ No encontré videos para tu búsqueda.'));
             }
 
             const videos = data.data.slice(0, 5);
 
             for (const video of videos) {
-                const caption = `ꕥ *TikTok Video* \n\n` +
+                const caption = `ꕣ *TikTok Video* \n\n` +
                     `> *Título* » ${video.title}\n` +
                     `> *Autor* » ${video.author.nickname} (@${video.author.unique_id})\n` +
                     `> *Duración* » ${video.duration}\n` +
@@ -43,7 +43,7 @@ export default {
             }
         } catch (error) {
             logger.error('[TikTokSearch] Error:', error);
-            await reply(styleText('ꕤ Ocurrió un error al buscar videos.'));
+            await reply(styleText('ꕢ Ocurrió un error al buscar videos.'));
         }
     }
 };

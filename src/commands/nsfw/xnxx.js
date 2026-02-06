@@ -12,13 +12,13 @@ export default {
         if (isGroup) {
             const groupData = dbService.getGroup(chatId);
             if (!groupData.settings?.nsfw) {
-                return await reply(styleText('ꕤ Los comandos NSFW están desactivados en este grupo.\n> Un admin debe activarlos con */nsfw on*'));
+                return await reply(styleText('ꕢ Los comandos NSFW están desactivados en este grupo.\n> Un admin debe activarlos con */nsfw on*'));
             }
         }
 
         if (!args[0]) {
             return await reply(styleText(
-                `ꕤ *Uso incorrecto del comando*\n\n` +
+                `ꕢ *Uso incorrecto del comando*\n\n` +
                 `Ejemplo:\n` +
                 `> ${prefix}${command} https://www.xnxx.com/video-example`
             ));
@@ -26,25 +26,25 @@ export default {
 
         const url = args[0];
         if (!url.match(/xnxx/i)) {
-            return await reply(styleText('ꕤ Por favor ingresa un enlace válido de XNXX.'));
+            return await reply(styleText('ꕢ Por favor ingresa un enlace válido de XNXX.'));
         }
 
         try {
-            await reply(styleText('ꕥ Procesando video... '));
+            await reply(styleText('ꕣ Procesando video... '));
             const response = await axios.get(`https://api.delirius.store/download/xnxxdl?url=${encodeURIComponent(url)}`);
 
             if (!response.data?.status || !response.data?.data) {
-                return await reply(styleText('ꕤ No se pudo descargar el video. Verifica el enlace o intenta de nuevo más tarde.'));
+                return await reply(styleText('ꕢ No se pudo descargar el video. Verifica el enlace o intenta de nuevo más tarde.'));
             }
 
             const { title, duration, quality, views, download } = response.data.data;
             const videoUrl = download.high || download.low;
 
             if (!videoUrl) {
-                return await reply(styleText('ꕤ No se encontró un enlace de descarga válido.'));
+                return await reply(styleText('ꕢ No se encontró un enlace de descarga válido.'));
             }
 
-            const caption = `ꕥ *XNXX Downloader*\n\n` +
+            const caption = `ꕣ *XNXX Downloader*\n\n` +
                 `> *Título* » ${title}\n` +
                 `> *Duración* » ${duration || 'N/A'}\n` +
                 `> *Calidad* » ${quality || 'N/A'}\n` +
@@ -57,7 +57,7 @@ export default {
             });
         } catch (error) {
             logger.error('[XNXX DL] Error:', error);
-            await reply(styleText('ꕤ Error al descargar el video. Inténtalo más tarde.'));
+            await reply(styleText('ꕢ Error al descargar el video. Inténtalo más tarde.'));
         }
     }
 };

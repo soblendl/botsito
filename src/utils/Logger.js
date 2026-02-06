@@ -81,6 +81,6 @@ class Logger {
     }
 }
 
-const globalLogger = new Logger('Kaoruko', process.env.LOG_LEVEL || 'INFO');
+const globalLogger = new Logger('Shoko', process.env.LOG_LEVEL || 'INFO');
 export { Logger, globalLogger };
 export default Logger;

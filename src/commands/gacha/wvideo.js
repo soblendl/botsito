@@ -6,7 +6,7 @@ export default {
     async execute(ctx) {
         const { args, gachaService, bot, chatId } = ctx;
         if (args.length === 0) {
-            return await ctx.reply(styleText('ꕤ Debes especificar el nombre del personaje.\nUso: #wvideo <personaje>'));
+            return await ctx.reply(styleText('ꕢ Debes especificar el nombre del personaje.\nUso: #wvideo <personaje>'));
         }
         const query = args.join(' ').toLowerCase();
         const character = gachaService.characters.find(c =>
@@ -14,13 +14,13 @@ export default {
             (c.alias && c.alias.toLowerCase().includes(query))
         );
         if (!character) {
-            return await ctx.reply(styleText('ꕤ Personaje no encontrado.'));
+            return await ctx.reply(styleText('ꕢ Personaje no encontrado.'));
         }
         if (!character.vid || character.vid.length === 0) {
-            return await ctx.reply(styleText(`ꕤ ${character.name} no tiene videos registrados.`))
+            return await ctx.reply(styleText(`ꕢ ${character.name} no tiene videos registrados.`))
         }
         const randomVid = character.vid[Math.floor(Math.random() * character.vid.length)];
-        await ctx.reply(styleText('ꕤ Enviando video...'));
+        await ctx.reply(styleText('ꕢ Enviando video...'));
         try {
             await bot.sock.sendMessage(chatId, {
                 video: { url: randomVid },
@@ -29,7 +29,7 @@ export default {
             }, { quoted: ctx.msg });
         } catch (error) {
             console.error('Error enviando video:', error);
-            await ctx.reply(styleText('ꕤ Error al enviar el video. Puede que el enlace esté caído.'))
+            await ctx.reply(styleText('ꕢ Error al enviar el video. Puede que el enlace esté caído.'))
         }
     }
 };

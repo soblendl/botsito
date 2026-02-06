@@ -4,9 +4,9 @@ export default {
     async execute(ctx) {
         const userData = ctx.userData;
         const gachaService = ctx.gachaService;
-        const userCharacters = userData.gacha?.characters || [];
+        const userCharacters = gachaService.getByOwner(ctx.sender) || [];
         if (userCharacters.length === 0) {
-            return await ctx.reply(styleText('ꕤ No tienes personajes aún.'));
+            return await ctx.reply(styleText('ꕢ No tienes personajes aún.'));
         }
         let page = 1;
         const args = ctx.args.join(' ').toLowerCase();
@@ -25,7 +25,7 @@ export default {
         const startIndex = (page - 1) * itemsPerPage;
         const endIndex = startIndex + itemsPerPage;
         const charactersToShow = userCharacters.slice(startIndex, endIndex);
-        let message = `ꕥ Inventario de Compras\n\n`;
+        let message = `ꕣ Inventario de Compras\n\n`;
         const userNumber = ctx.sender.replace(/@.+/, '');
         message += `♟ Usuario » @${userNumber}\n`;
         message += `> ✐ Personajes comprados » ${userCharacters.length}\n\n`;

@@ -3,11 +3,11 @@ export default {
     commands: ['tag'],
     async execute(ctx) {
         if (!ctx.isGroup) {
-            return await ctx.reply(styleText('ꕤ Este comando solo funciona en grupos.'));
+            return await ctx.reply(styleText('ꕢ Este comando solo funciona en grupos.'));
         }
         const admin = await isAdmin(ctx.bot, ctx.chatId, ctx.senderLid || ctx.sender);
         if (!admin) {
-            return await ctx.reply(styleText('ꕤ Solo los administradores pueden usar este comando.'));
+            return await ctx.reply(styleText('ꕢ Solo los administradores pueden usar este comando.'));
         }
         let text = '';
         const msg = ctx.msg;
@@ -45,7 +45,7 @@ export default {
             });
         } catch (error) {
             console.error('[AdminTag] Error:', error);
-            await ctx.reply(styleText('ꕤ Error al enviar el mensaje: ' + error.message));
+            await ctx.reply(styleText('ꕢ Error al enviar el mensaje: ' + error.message));
         }
     }
 };

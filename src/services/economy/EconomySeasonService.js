@@ -11,7 +11,7 @@ export class EconomySeasonService {
             name: 'Temporada Beta',
             active: true,
             startDate: Date.now(),
-            endDate: Date.now() + (30 * 24 * 60 * 60 * 1000), // 30 días
+            endDate: Date.now() + (30 * 24 * 60 * 60 * 1000), 
             participants: []
         };
     }
@@ -24,7 +24,7 @@ export class EconomySeasonService {
             } else {
                 await this.save();
             }
-            logger.info('ꕥ EconomySeasonService cargado');
+            logger.info('ꕣ EconomySeasonService cargado');
         } catch (error) {
             logger.error('Error loading season data:', error);
         }
@@ -39,8 +39,8 @@ export class EconomySeasonService {
     }
 
     async getSeasonLeaderboard(limit = 10) {
-        // En una implementación real, esto consultaría a la DB filtrando por puntos de temporada
-        // Por ahora, simularemos usando el balance de monedas de los usuarios
+        
+        
         const users = await this.dbService.getAllUsers();
         return users
             .sort((a, b) => (b.economy?.coins || 0) - (a.economy?.coins || 0))

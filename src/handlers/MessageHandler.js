@@ -3,7 +3,7 @@ import path from 'path';
 import { PREFIXES, RATE_LIMIT, ERRORS } from '../config/constants.js';
 import { styleText, isOwner } from '../utils/helpers.js';
 import { globalLogger as logger } from '../utils/logger.js';
-// UploadService import removed
+
 
 let wapiModule = null;
 const getWapi = async () => {
@@ -229,7 +229,7 @@ export class MessageHandler {
                 prefix: this.PREFIX
             };
 
-            // Auto-add logic removed (delegated to addwaifu.js)
+            
 
 
             const lastXp = this.cacheManager.get(`xp_${sender}`);
@@ -315,7 +315,7 @@ export class MessageHandler {
 
             if (MessageHandler.PREMBOT_EXCLUSIVE_COMMANDS.includes(commandName)) {
                 if (isSpecialBot && !m.key.fromMe) {
-                    await ctx.reply(styleText('ꕤ Este comando solo puede ser usado por el dueño del bot.'));
+                    await ctx.reply(styleText('ꕢ Este comando solo puede ser usado por el dueño del bot.'));
                     return;
                 }
             }
@@ -361,7 +361,7 @@ export class MessageHandler {
             }
 
         } catch (error) {
-            logger.error('ꕤ Error procesando mensaje:', error);
+            logger.error('ꕢ Error procesando mensaje:', error);
             const prefix = PREFIXES.find(p => text.startsWith(p));
             if (prefix && text.trim().length > prefix.length) {
                 const chatId = m.key.remoteJid;

@@ -6,7 +6,7 @@ export default {
         try {
             if (ctx.args.length === 0) {
                 return await ctx.reply(styleText(
-                    `ꕤ *Uso incorrecto del comando*\n\n` +
+                    `ꕢ *Uso incorrecto del comando*\n\n` +
                     `Ejemplo:\n` +
                     `> #instagram https://www.instagram.com/p/xxxxx\n` +
                     `> #ig https://www.instagram.com/reel/xxxxx`
@@ -18,14 +18,14 @@ export default {
             }
             const url = ctx.args[0];
             if (!url.includes('instagram.com')) {
-                return await ctx.reply(styleText('ꕤ Por favor ingresa un link válido de Instagram.'));
+                return await ctx.reply(styleText('ꕢ Por favor ingresa un link válido de Instagram.'));
             }
-            await ctx.reply(styleText('⏳ Descargando...'));
+            await ctx.reply(styleText('Descargando...'));
             const response = await igdl(url);
             const data = response.data;
             if (!data || data.length === 0) {
                 return await ctx.reply(styleText(
-                    'ꕤ No se encontró contenido en este enlace.\n\n' +
+                    'ꕢ No se encontró contenido en este enlace.\n\n' +
                     '> *Tip:* Verifica que el enlace sea correcto y público.'
                 ));
             }
@@ -38,7 +38,7 @@ export default {
                 throw new Error('No se encontró un medio válido.');
             }
             await ctx.replyWithVideo(media.url, {
-                caption: styleText(`ꕥ *Instagram Downloader*\n\n` +
+                caption: styleText(`ꕣ *Instagram Downloader*\n\n` +
                     `> ✿ *Resolución* » ${media.resolution || 'Desconocida'}\n` +
                     `> ✿ *Link original* » ${url}`)
             });
@@ -47,11 +47,11 @@ export default {
             if (error.code === 'ENOSPC' || error.message?.includes('ENOSPC')) {
                 global.memoryManager?.forceCleanup();
                 return await ctx.reply(styleText(
-                    'ꕤ Error de espacio/memoria. Intenta en unos segundos.'
+                    'ꕢ Error de espacio/memoria. Intenta en unos segundos.'
                 ));
             }
             await ctx.reply(styleText(
-                `ꕤ Error al descargar contenido de Instagram.`
+                `ꕢ Error al descargar contenido de Instagram.`
             ));
         }
     }

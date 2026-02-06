@@ -22,7 +22,7 @@ export default {
         const userId = ctx.sender.includes('@') ? ctx.sender : `${ctx.sender}@s.whatsapp.net`;
         const code = jadibotManager.createCode(userId);
         await ctx.reply(styleText(
-            `ꕥ *Jadibot - Sub-Bot*\n\n` +
+            `ꕣ *Jadibot - Sub-Bot*\n\n` +
             `Elige un método para vincular:\n\n` +
             `> *Opción 1: Código de 8 Dígitos*\n` +
             `> Usa \`#code\` para recibir el código\n` +

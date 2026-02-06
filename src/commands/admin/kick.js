@@ -1,24 +1,25 @@
 import { isAdmin, isBotAdmin, extractMentions, styleText } from '../../utils/helpers.js';
+import { findParticipant } from '../../utils/permissions.js';
 import { globalLogger as logger } from '../../utils/logger.js';
 
 export default {
     commands: ['kick', 'expulsar'],
     async execute(ctx) {
         if (!ctx.isGroup) {
-            return await ctx.reply(styleText('ꕤ Este comando solo funciona en grupos.'));
+            return await ctx.reply(styleText('ꕢ Este comando solo funciona en grupos.'));
         }
 
         const userIdForAdmin = ctx.senderLid || ctx.sender;
         const admin = await isAdmin(ctx.bot, ctx.chatId, userIdForAdmin);
 
         if (!admin) {
-            return await ctx.reply(styleText('ꕤ Solo los administradores pueden usar este comando.'));
+            return await ctx.reply(styleText('ꕢ Solo los administradores pueden usar este comando.'));
         }
 
         const botAdmin = await isBotAdmin(ctx.bot, ctx.chatId);
 
         if (!botAdmin) {
-            return await ctx.reply(styleText('ꕤ Necesito ser administrador para expulsar usuarios.'));
+            return await ctx.reply(styleText('ꕢ Necesito ser administrador para expulsar usuarios.'));
         }
 
         let targetUser = null;
@@ -39,14 +40,14 @@ export default {
         }
 
         if (!targetUser) {
-            return await ctx.reply(styleText('ꕤ Por favor etiqueta o responde al usuario a expulsar.\n\n> _Uso: #kick @usuario_'));
+            return await ctx.reply(styleText('ꕢ Por favor etiqueta o responde al usuario a expulsar.\n\n> _Uso: #kick @usuario_'));
         }
 
         try {
             const targetIsAdmin = await isAdmin(ctx.bot, ctx.chatId, targetUser);
 
             if (targetIsAdmin) {
-                return await ctx.reply(styleText(`ꕤ No puedo expulsar a @${targetUser.split('@')[0]} porque es administrador.`), {
+                return await ctx.reply(styleText(`ꕢ No puedo expulsar a @${targetUser.split('@')[0]} porque es administrador.`), {
                     mentions: [targetUser]
                 });
             }
@@ -54,24 +55,37 @@ export default {
             const botId = ctx.bot.sock?.user?.id?.split(':')[0] || ctx.bot.user?.id?.split(':')[0];
 
             if (targetUser.includes(botId)) {
-                return await ctx.reply(styleText('ꕤ No puedo expulsarme a mí mismo.'));
+                return await ctx.reply(styleText('ꕢ No puedo expulsarme a mí mismo.'));
             }
 
             logger.info(`[AdminKick] Ejecutando expulsión de ${targetUser} en grupo ${ctx.chatId}`);
 
-            await ctx.bot.groupParticipantsUpdate(ctx.chatId, [targetUser], 'remove');
+            // Convert LID to Phone JID if necessary
+            const participant = await findParticipant(ctx.bot, ctx.chatId, targetUser);
+
+            if (!participant) {
+                logger.error(`[AdminKick] No se encontró al participante ${targetUser} en el grupo`);
+                return await ctx.reply(styleText('ꕢ No se encontró al usuario en el grupo.'));
+            }
+
+            // Always use participant.id which is the Phone JID
+            const jidToKick = participant.id;
+
+            logger.info(`[AdminKick] Expulsando JID: ${jidToKick} (original: ${targetUser})`);
+
+            await ctx.bot.groupParticipantsUpdate(ctx.chatId, [jidToKick], 'remove');
 
             await ctx.reply(styleText(
-                `ꕥ *Usuario Expulsado* \n\n` +
+                `ꕣ *Usuario Expulsado* \n\n` +
                 `> ⚬ Usuario » @${targetUser.split('@')[0]}\n` +
                 `> ⚬ Acción » Expulsión inmediata`
             ), {
-                mentions: [targetUser]
+                mentions: [jidToKick]
             });
 
         } catch (error) {
             logger.error('[AdminKick] Error:', error);
-            await ctx.reply(styleText('ꕤ Error al expulsar al usuario: ' + error.message));
+            await ctx.reply(styleText('ꕢ Error al expulsar al usuario: ' + error.message));
         }
     }
 };

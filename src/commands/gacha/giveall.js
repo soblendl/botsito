@@ -5,7 +5,7 @@ export default {
         const mentions = getMentions(body);
         if (mentions.length === 0) {
             return await sock.sendMessage(chatId, {
-                text: styleText('ꕤ Debes mencionar al usuario.\nUso: #giveall @usuario')
+                text: styleText('ꕢ Debes mencionar al usuario.\nUso: #giveall @usuario')
             });
         }
         const target = mentions[0];
@@ -13,12 +13,12 @@ export default {
         const characters = userData.gacha?.characters || [];
         if (characters.length === 0) {
             return await sock.sendMessage(chatId, {
-                text: styleText('ꕤ No tienes personajes en tu harem.')
+                text: styleText('ꕢ No tienes personajes en tu harem.')
             });
         }
         if (!global.db.users[target]) {
             return await sock.sendMessage(chatId, {
-                text: styleText('ꕤ Ese usuario no está registrado.')
+                text: styleText('ꕢ Ese usuario no está registrado.')
             });
         }
         if (!global.db.users[target].gacha.characters) {
@@ -28,7 +28,7 @@ export default {
         global.db.users[target].gacha.characters.push(...characters);
         userData.gacha.characters = [];
         await sock.sendMessage(chatId, {
-            text: styleText(`ꕥ *Regalo Masivo*\n\n` +
+            text: styleText(`ꕣ *Regalo Masivo*\n\n` +
                 `Has regalado ${count} personajes a @${target.split('@')[0]}`),
             mentions: [target]
         });

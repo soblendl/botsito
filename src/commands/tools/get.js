@@ -9,7 +9,7 @@ export default {
     async execute(ctx) {
         const { text } = ctx
         if (!text) {
-            return await ctx.reply(styleText('ꕤ Ingresa una URL para hacer la petición.'))
+            return await ctx.reply(styleText('ꕢ Ingresa una URL para hacer la petición.'))
         }
 
         let urlMatch = text.match(/(https?:\/\/[^\s]+)/);
@@ -46,7 +46,7 @@ export default {
                 preview = preview.substring(0, 3000) + '... (truncado)'
             }
 
-            const msgText = `ꕥ *HTTP GET Request*\n\n` +
+            const msgText = `ꕣ *HTTP GET Request*\n\n` +
                 `> *URL* » ${url}\n` +
                 `> *Status* » ${response.status} ${response.statusText}\n` +
                 `> *Tiempo* » ${end - start}ms\n` +
@@ -55,7 +55,7 @@ export default {
             await ctx.reply(styleText(msgText))
         } catch (error) {
             logger.error('Error en get:', error)
-            await ctx.reply(styleText(`ꕤ Error » ${error.message}`))
+            await ctx.reply(styleText(`ꕢ Error » ${error.message}`))
         }
     }
 }

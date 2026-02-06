@@ -1,1 +1,53 @@
-import NodeCache from 'node-cache';class CacheManager {    constructor(ttlSeconds = 60 * 5) {        this.cache = new NodeCache({ stdTTL: ttlSeconds, checkperiod: ttlSeconds * 0.2 });        this.stats = { hits: 0, misses: 0, sets: 0 };    }    get(key) {        const value = this.cache.get(key);        if (value !== undefined) {            this.stats.hits++;        } else {            this.stats.misses++;        }        return value;    }    set(key, value, ttl) {        this.stats.sets++;        return this.cache.set(key, value, ttl);    }    has(key) {        return this.cache.has(key);    }    del(key) {        return this.cache.del(key);    }    keys() {        return this.cache.keys();    }    flush() {        this.cache.flushAll();        this.stats = { hits: 0, misses: 0, sets: 0 };    }    getStats() {        const nodeStats = this.cache.getStats();        const hitRate = this.stats.hits + this.stats.misses > 0            ? ((this.stats.hits / (this.stats.hits + this.stats.misses)) * 100).toFixed(2)            : 0;        return {            ...this.stats,            hitRate: `${hitRate}%`,            keyCount: this.cache.keys().length,            nodeCache: nodeStats        };    }    async getOrSet(key, fetchFn, ttl) {        const cached = this.get(key);        if (cached !== undefined) return cached;        const value = await fetchFn();        this.set(key, value, ttl);        return value;    }}export default CacheManager;
+import NodeCache from 'node-cache';
+class CacheManager {
+    constructor(ttlSeconds = 60 * 5) {
+        this.cache = new NodeCache({ stdTTL: ttlSeconds, checkperiod: ttlSeconds * 0.2 });
+        this.stats = { hits: 0, misses: 0, sets: 0 };
+    }
+    get(key) {
+        const value = this.cache.get(key);
+        if (value !== undefined) {
+            this.stats.hits++;
+        } else {
+            this.stats.misses++;
+        }
+        return value;
+    }
+    set(key, value, ttl) {
+        this.stats.sets++;
+        return this.cache.set(key, value, ttl);
+    }
+    has(key) {
+        return this.cache.has(key);
+    }
+    del(key) {
+        return this.cache.del(key);
+    }
+    keys() {
+        return this.cache.keys();
+    }
+    flush() {
+        this.cache.flushAll();
+        this.stats = { hits: 0, misses: 0, sets: 0 };
+    }
+    getStats() {
+        const nodeStats = this.cache.getStats();
+        const hitRate = this.stats.hits + this.stats.misses > 0
+            ? ((this.stats.hits / (this.stats.hits + this.stats.misses)) * 100).toFixed(2)
+            : 0;
+        return {
+            ...this.stats,
+            hitRate: `${hitRate}%`,
+            keyCount: this.cache.keys().length,
+            nodeCache: nodeStats
+        };
+    }
+    async getOrSet(key, fetchFn, ttl) {
+        const cached = this.get(key);
+        if (cached !== undefined) return cached;
+        const value = await fetchFn();
+        this.set(key, value, ttl);
+        return value;
+    }
+}
+export default CacheManager;

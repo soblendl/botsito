@@ -9,7 +9,7 @@ async function fetchImageBuffer(url) {
     try {
         const response = await axios.get(url, {
             responseType: 'arraybuffer',
-            timeout: 5000, 
+            timeout: 5000,
             maxRedirects: 3
         });
         const buffer = Buffer.from(response.data);
@@ -32,18 +32,17 @@ export default {
         const cooldown = getCooldown(lastRoll, COOLDOWN_TIME);
         if (cooldown > 0) {
             return await ctx.reply(styleText(
-                `ꕤ Debes esperar *${formatTime(cooldown)}* para volver a hacer roll.\n\n` +
+                `ꕢ Debes esperar *${formatTime(cooldown)}* para volver a hacer roll.\n\n` +
                 `> _*❐ Cooldown: 10 minutos*_`
             ));
         }
-        const character = gachaService.getRandom();
+        console.log('[DEBUG] RW: Getting random character...');
+        const character = await gachaService.getRandomCharacter();
+        console.log('[DEBUG] RW: Got character:', character?.name);
         if (!character) {
-            return await ctx.reply(styleText('ꕤ No hay personajes disponibles.'));
+            return await ctx.reply(styleText('ꕢ No hay personajes disponibles.'));
         }
-        await ctx.dbService.updateUser(ctx.sender, {
-            'gacha.rolled': character.id,
-            'gacha.lastRoll': Date.now()
-        });
+
         const rarity = Math.floor(parseInt(character.value || 0) / 400);
         const stars = '⭐'.repeat(Math.min(rarity, 5)) || '⭐';
         const rarityText = rarity >= 5 ? 'Legendario' :
@@ -51,19 +50,26 @@ export default {
                 rarity >= 3 ? 'Raro' :
                     rarity >= 2 ? 'Poco Común' : 'Común';
         const sellPrice = Math.floor(character.value * 0.8);
-        let message = `ꕥ Nombre » *${character.name}*\n\n`;
+        let message = `ꕣ Nombre » *${character.name}*\n\n`;
         message += `➭ Fuente » *${character.source || 'Desconocido'}*\n`;
         message += `𖧧 Rareza » *${rarityText}*\n`;
         message += `苳 Valor » *${formatNumber(character.value)}*\n`;
         message += `₿ Precio » *${formatNumber(sellPrice)}*\n`;
         message += `♛ Dueño » *${character.owner ? '@' + character.owner.replace(/@.+/, '') : 'Nadie'}*\n\n`;
-        message += `> _*❐ Usa #claim en 30 segundos o se perderá!*_`;
+        
+        await ctx.dbService.updateUser(ctx.sender, {
+            'gacha.rolled': character.id,
+            'gacha.lastRoll': Date.now()
+        });
+
+        message += `> _*❐ Usa #claim en 60 segundos o se perderá!*_`;
         if (character.img && character.img.length > 0) {
             try {
                 const mentions = character.owner ? [character.owner] : [];
+                console.log('[DEBUG] RW: Fetching image...');
                 const imageBuffer = await Promise.race([
                     fetchImageBuffer(character.img[0]),
-                    new Promise(resolve => setTimeout(() => resolve(null), 3000)) 
+                    new Promise(resolve => setTimeout(() => resolve(null), 3000))
                 ]);
                 if (imageBuffer) {
                     await ctx.bot.sendMessage(ctx.chatId, {
@@ -72,7 +78,7 @@ export default {
                         mentions: mentions
                     });
                 } else {
-                        await ctx.bot.sendMessage(ctx.chatId, {
+                    await ctx.bot.sendMessage(ctx.chatId, {
                         image: { url: character.img[0] },
                         caption: styleText(message),
                         mentions: mentions
@@ -82,7 +88,7 @@ export default {
                 console.error('[DEBUG] Error sending waifu image:', error);
                 if (error.code === 'ENOSPC') {
                     return await ctx.reply(styleText(
-                        `ꕤ Error temporal del servidor (sin espacio).\n\n` +
+                        `ꕢ Error temporal del servidor (sin espacio).\n\n` +
                         `Mostrando información sin imagen:\n\n${message}`
                     ), { mentions: character.owner ? [character.owner] : [] });
                 }

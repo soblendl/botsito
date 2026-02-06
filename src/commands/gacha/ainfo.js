@@ -9,7 +9,7 @@ export default {
         const { text, gachaService } = ctx;
 
         if (!text) {
-            return await ctx.reply('ꕤ Debes especificar el nombre de un anime.\nEjemplo: #ainfo Naruto');
+            return await ctx.reply('ꕢ Debes especificar el nombre de un anime.\nEjemplo: #ainfo Naruto');
         }
 
         const cleanText = text.replace(/^#?\w+\s+/, '').trim();
@@ -21,7 +21,7 @@ export default {
         });
 
         if (charactersFromAnime.length === 0) {
-            return await ctx.reply(styleText(`ꕤ No se encontraron personajes del anime "${text}" en el gacha.`));
+            return await ctx.reply(styleText(`ꕢ No se encontraron personajes del anime "${text}" en el gacha.`));
         }
 
         charactersFromAnime.sort((a, b) => b.value - a.value);

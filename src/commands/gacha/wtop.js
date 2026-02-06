@@ -10,10 +10,10 @@ export default {
             .slice(0, 10);
         if (waifus.length === 0) {
             return await sock.sendMessage(chatId, {
-                text: styleText('ꕤ No hay votos registrados aún.')
+                text: styleText('ꕢ No hay votos registrados aún.')
             });
         }
-        let message = 'ꕥ Ranking de Popularidad\n\n';
+        let message = 'ꕣ Ranking de Popularidad\n\n';
         message += '➭ Top 10 Personajes más Votados\n\n';
         waifus.forEach((waifu, i) => {
             const medal = i === 0 ? '❶' : i === 1 ? '❷' : i === 2 ? '❸' : `${i + 1}.`;

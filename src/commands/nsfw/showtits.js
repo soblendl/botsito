@@ -17,7 +17,7 @@ export default {
         if (isGroup) {
             const groupData = await ctx.dbService.getGroup(chatId);
             if (!groupData?.settings?.nsfw) {
-                return await ctx.reply(styleText('ꕤ Los comandos NSFW están desactivados en este grupo.'));
+                return await ctx.reply(styleText('ꕢ Los comandos NSFW están desactivados en este grupo.'));
             }
         }
 
@@ -50,7 +50,7 @@ export default {
                             targetName = participant.notify || participant.name || targetId;
                         }
                     } catch (e) {
-                        // Ignore error
+                        
                     }
                 }
                 caption = `\`${senderName}\` está mostrando las tetas a \`${targetName}\` (‿ˠ‿)`;
@@ -69,7 +69,7 @@ export default {
 
         } catch (error) {
             logger.error('[SHOWTITS] Error:', error);
-            await ctx.reply(styleText('ꕤ Error al enviar el video.'));
+            await ctx.reply(styleText('ꕢ Error al enviar el video.'));
         }
     }
 };

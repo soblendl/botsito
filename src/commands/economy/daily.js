@@ -7,7 +7,7 @@ export default {
         if (ctx.isGroup) {
             const groupData = await ctx.dbService.getGroup(ctx.chatId);
             if (!groupData?.settings?.economy) {
-                return await ctx.reply(styleText('ꕤ El sistema de economía está desactivado en este grupo.'));
+                return await ctx.reply(styleText('ꕢ El sistema de economía está desactivado en este grupo.'));
             }
         }
         const userData = await ctx.dbService.getUser(ctx.sender);
@@ -16,7 +16,7 @@ export default {
         const lastDaily = userData.economy?.lastDaily || 0;
         const cooldown = getCooldown(lastDaily, COOLDOWN);
         if (cooldown > 0) {
-            return await ctx.reply(styleText(`ꕤ Ya reclamaste tu recompensa diaria.\nVuelve en: *${formatTime(cooldown)}*`));
+            return await ctx.reply(styleText(`ꕢ Ya reclamaste tu recompensa diaria.\nVuelve en: *${formatTime(cooldown)}*`));
         }
         const timeSinceLast = now - lastDaily;
         const streakTimeLimit = 48 * 60 * 60 * 1000;
@@ -32,7 +32,7 @@ export default {
             'economy.lastDaily': now,
             'economy.dailyStreak': streak
         });
-        let message = `ꕥ *RECOMPENSA DIARIA*\n\n`;
+        let message = `ꕣ *RECOMPENSA DIARIA*\n\n`;
         message += `> Día » ¥${streak}\n`;
         message += `> Recompensa » *¥${formatNumber(reward)}* coins\n`;
         if (streak > 1) {
