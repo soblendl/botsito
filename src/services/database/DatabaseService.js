@@ -119,7 +119,7 @@ class DatabaseService {
         const result = await User.findOneAndUpdate(
             { id: userId },
             { $set: updates },
-            { upsert: true, new: true }
+            { upsert: true, returnDocument: 'after' }
         ).lean();
         userCache.set(userId, result);
         return result;
@@ -173,7 +173,7 @@ class DatabaseService {
         const result = await Group.findOneAndUpdate(
             { id: groupId },
             { $set: updates },
-            { upsert: true, new: true }
+            { upsert: true, returnDocument: 'after' }
         ).lean();
         groupCache.set(groupId, result);
         return result;

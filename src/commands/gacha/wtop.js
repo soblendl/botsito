@@ -5,8 +5,8 @@ export default {
         const { bot, msg, chatId } = ctx;
         const sock = bot.sock || bot;
         const waifus = global.gachaService.characters
-            .filter(c => c.voteCount && c.voteCount > 0)
-            .sort((a, b) => b.voteCount - a.voteCount)
+            .filter(c => c.votes && c.votes > 0)
+            .sort((a, b) => b.votes - a.votes)
             .slice(0, 10);
         if (waifus.length === 0) {
             return await sock.sendMessage(chatId, {
@@ -18,7 +18,7 @@ export default {
         waifus.forEach((waifu, i) => {
             const medal = i === 0 ? '❶' : i === 1 ? '❷' : i === 2 ? '❸' : `${i + 1}.`;
             message += `${medal} Nombre » ${waifu.name}\n`;
-            message += `> ⚘ Votos » ${waifu.voteCount}\n\n`;
+            message += `> ⚘ Votos » ${waifu.votes}\n\n`;
         });
         await sock.sendMessage(chatId, { text: styleText(message) });
     }

@@ -8,7 +8,6 @@ export default {
     async execute(ctx) {
         const { text, bot, sender } = ctx;
         const adminNumber = '639972367773@s.whatsapp.net';
-
         if (!text) {
             return await ctx.reply(styleText('ꕢ Por favor escribe tu sugerencia.\nEjemplo: #suggest Agregar más juegos'));
         }

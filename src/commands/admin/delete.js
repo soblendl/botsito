@@ -1,5 +1,4 @@
 import { isBotAdmin, isAdmin, styleText } from '../../utils/helpers.js';
-
 export default {
     commands: ['del', 'delete', 'eliminar', 'dd'],
     tags: ['admin'],
@@ -7,41 +6,16 @@ export default {
     async execute(ctx) {
         const { bot, chatId, isGroup, msg, reply, sender, senderLid } = ctx;
         const conn = bot?.sock;
-
-        if (!isGroup) {
-            return await reply(styleText('ꕢ Este comando solo funciona en grupos.'));
-        }
-
-        // Use senderLid if available, fallback to sender
+        if (!isGroup) return await reply(styleText('ꕢ Este comando solo funciona en grupos.'));
         const userIdForAdmin = senderLid || sender;
-
-        if (!await isAdmin(conn, chatId, userIdForAdmin)) {
-            return await reply(styleText('ꕢ Necesitas ser administrador para usar este comando.'));
-        }
-
-        if (!await isBotAdmin(conn, chatId)) {
-            return await reply(styleText('ꕢ Necesito ser administrador para eliminar mensajes.'));
-        }
-
-        if (!msg.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
-            return await reply(styleText('ꕢ Por favor responde al mensaje que quieres eliminar.'));
-        }
-
+        if (!await isAdmin(conn, chatId, userIdForAdmin)) return await reply(styleText('ꕢ Necesitas ser administrador para usar este comando.'));
+        if (!await isBotAdmin(conn, chatId)) return await reply(styleText('ꕢ Necesito ser administrador para eliminar mensajes.'));
+        if (!msg.message?.extendedTextMessage?.contextInfo?.quotedMessage) return await reply(styleText('ꕢ Por favor responde al mensaje que quieres eliminar.'));
         const quoted = msg.message.extendedTextMessage.contextInfo;
         const participant = quoted.participant || quoted.remoteJid;
-
         const deleteKey = {
-            remoteJid: chatId,
-            fromMe: participant === conn.user.id.split(':')[0] + '@s.whatsapp.net',
-            id: quoted.stanzaId,
-            participant: participant
+            remoteJid: chatId, fromMe: participant === conn.user.id.split(':')[0] + '@s.whatsapp.net', id: quoted.stanzaId, participant: participant
         };
-
-        try {
-            await conn.sendMessage(chatId, { delete: deleteKey });
-        } catch (e) {
-            console.error('[Delete] Error:', e);
-            await reply(styleText('ꕢ Error al eliminar el mensaje.'));
-        }
+        try { await conn.sendMessage(chatId, { delete: deleteKey }); } catch (e) { console.error('[Delete] Error:', e); await reply(styleText('ꕢ Error al eliminar el mensaje.')); }
     }
 };

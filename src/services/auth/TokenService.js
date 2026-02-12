@@ -305,7 +305,13 @@ class TokenService {
             const approvalUrl = order.links?.find(l => l.rel === 'approve')?.href;
             return { success: true, orderId: order.id, approvalUrl };
         } catch (error) {
-            logger.error('PayPal Error:', error);
+            logger.error('PayPal Create Order Error:', error);
+            if (error.response) {
+                try {
+                    const errorBody = await error.response.text();
+                    logger.error('PayPal Error Body:', errorBody);
+                } catch (e) { }
+            }
             return { success: false, error: error.message };
         }
     }

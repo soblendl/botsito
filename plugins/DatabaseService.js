@@ -14,7 +14,7 @@ class DatabaseService {
     constructor() {
         this.isConnected = false;
         // Keep these for migration purposes
-        this.localDB = null; 
+        this.localDB = null;
         this.localUsers = null;
         this.localGroups = null;
     }
@@ -62,7 +62,7 @@ class DatabaseService {
                 // Filter out invalid entries if any
                 const validUsers = users.filter(u => u.id && !u.id.includes('undefined'));
                 if (validUsers.length > 0) {
-                     // Use insertMany with ordered: false to continue if duplicates exist
+                    // Use insertMany with ordered: false to continue if duplicates exist
                     await User.insertMany(validUsers, { ordered: false }).catch(e => console.log('Partial user migration error:', e.message));
                 }
             }
@@ -71,7 +71,7 @@ class DatabaseService {
                 // Bulk insert groups
                 const validGroups = groups.filter(g => g.id);
                 if (validGroups.length > 0) {
-                     await Group.insertMany(validGroups, { ordered: false }).catch(e => console.log('Partial group migration error:', e.message));
+                    await Group.insertMany(validGroups, { ordered: false }).catch(e => console.log('Partial group migration error:', e.message));
                 }
             }
 
@@ -92,9 +92,9 @@ class DatabaseService {
         // Migration from alias (LID) logic
         if (!user && aliasId) {
             let aliasUser = await User.findOne({ id: aliasId });
-            
+
             // Try correcting domain if not found
-             if (!aliasUser && aliasId.includes('@lid')) {
+            if (!aliasUser && aliasId.includes('@lid')) {
                 const lidAsSwa = aliasId.replace('@lid', '@s.whatsapp.net');
                 aliasUser = await User.findOne({ id: lidAsSwa });
             }
@@ -102,13 +102,13 @@ class DatabaseService {
             if (aliasUser) {
                 console.log(`✨ Migrating user data from ${aliasUser.id} to ${userId}`);
                 await User.deleteOne({ id: aliasUser.id });
-                
+
                 // Create new user with old data
                 const userData = aliasUser.toObject();
                 delete userData._id;
                 delete userData.__v;
                 userData.id = userId;
-                
+
                 user = await User.create(userData);
                 return user;
             }
@@ -151,11 +151,11 @@ class DatabaseService {
 
     async updateUser(userId, updates) {
         // console.log(`🔧 Updating user ${userId}:`, updates);
-        
+
         // MongoDB handles dot notation in updates automatically if passed correctly,
         // but often we pass objects. Flattening might be needed if updates is a nested partial.
         // For simplicity and safety with existing code style, we can use $set.
-        
+
         // If updates contains dot notation keys (e.g. 'economy.coins'), Mongoose handles it.
         // If it contains nested objects that should be merged, we might need to be careful not to overwrite.
         // However, looking at previous code, it manually applied updates.
@@ -171,6 +171,16 @@ class DatabaseService {
         } catch (error) {
             console.error(`⚠️ Failed to update user ${userId}:`, error.message);
             return null;
+        }
+    }
+
+    async deleteUser(userId) {
+        try {
+            const result = await User.deleteOne({ id: userId });
+            return result.deletedCount > 0;
+        } catch (error) {
+            console.error(`⚠️ Failed to delete user ${userId}:`, error.message);
+            return false;
         }
     }
 
@@ -201,7 +211,7 @@ class DatabaseService {
     }
 
     async updateGroup(groupId, updates) {
-         try {
+        try {
             const result = await Group.findOneAndUpdate(
                 { id: groupId },
                 { $set: updates },
@@ -224,7 +234,7 @@ class DatabaseService {
             //   { $sort: { total: -1 } },
             //   { $limit: limit }
             // ]);
-            
+
             // Simple JS approach for now to match logic:
             const users = await User.find({});
             return users
@@ -258,9 +268,9 @@ class DatabaseService {
             // Simple JS approach: fetch all, sort, find index
             // Ideally use aggregation $rank with window fields in newer Mongo versions, 
             // or count documents with greater wealth.
-            
+
             const users = await User.find({}, { id: 1, economy: 1 }); // Projection to save memory
-            
+
             const sorted = users
                 .map(u => ({
                     id: u.id,

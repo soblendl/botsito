@@ -1,5 +1,7 @@
 ﻿import { isAdmin, isBotAdmin, styleText, isOwner } from '../lib/utils.js';
 
+import { findParticipant } from '../src/utils/permissions.js';
+
 const botAdminCache = new Map();
 
 export default {
@@ -30,20 +32,34 @@ export default {
 
         if (!botIsAdmin) return;
 
-        // ACCIÓN: Borrar mensaje y eliminar usuario
+        // 1. Intentar borrar el mensaje
         try {
             await bot.sock.sendMessage(chatId, { delete: msg.key });
-            await bot.sock.groupParticipantsUpdate(chatId, [sender], 'remove');
         } catch (e) {
-            console.error('[Antilink] Error al eliminar usuario/mensaje:', e);
+            console.error('[Antilink] Error al eliminar mensaje:', e);
         }
 
-        // Avisar
-        const userNumber = sender.split('@')[0].split(':')[0];
-        const mentionJid = `${userNumber}@s.whatsapp.net`;
-        await ctx.reply(styleText(`@${userNumber} eliminado por enviar enlaces prohibidos (¬_¬")`), {
-            mentions: [mentionJid]
-        });
+        // 2. Intentar eliminar al usuario (independiente del mensaje)
+        try {
+            // Convert LID to Phone JID if necessary
+            const participant = await findParticipant(bot, chatId, sender);
+
+            if (participant && participant.id) {
+                await bot.sock.groupParticipantsUpdate(chatId, [participant.id], 'remove');
+
+                const userNumber = sender.split('@')[0].split(':')[0];
+                const mentionJid = `${userNumber}@s.whatsapp.net`;
+
+                await bot.sock.sendMessage(chatId, {
+                    text: styleText(`@${userNumber} eliminado por enviar enlaces prohibidos (¬_¬")`),
+                    mentions: [mentionJid]
+                });
+            } else {
+                console.warn('[Antilink] No se pudo encontrar al participante para eliminar:', sender);
+            }
+        } catch (e) {
+            console.error('[Antilink] Error al eliminar usuario:', e);
+        }
     },
 
     async execute(ctx) {

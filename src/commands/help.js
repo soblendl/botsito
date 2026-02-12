@@ -1,5 +1,88 @@
 import axios from 'axios';
 import fs from 'fs';
+
+function getGreeting(phoneNumber) {
+    // Mapa de códigos de país a offset UTC
+    const timezoneMap = {
+        // América
+        '1': -5,        // USA/Canadá (EST)
+        '52': -6,       // México
+        '51': -5,       // Perú
+        '54': -3,       // Argentina
+        '55': -3,       // Brasil
+        '56': -4,       // Chile
+        '57': -5,       // Colombia
+        '58': -4,       // Venezuela
+        '591': -4,      // Bolivia
+        '593': -5,      // Ecuador
+        '595': -4,      // Paraguay
+        '598': -3,      // Uruguay
+        '506': -6,      // Costa Rica
+        '507': -5,      // Panamá
+        '502': -6,      // Guatemala
+        '503': -6,      // El Salvador
+        '504': -6,      // Honduras
+        '505': -6,      // Nicaragua
+        '509': -5,      // Haití
+        '53': -5,       // Cuba
+        // Europa
+        '34': 1,        // España
+        '33': 1,        // Francia
+        '39': 1,        // Italia
+        '49': 1,        // Alemania
+        '44': 0,        // Reino Unido
+        '351': 0,       // Portugal
+        // Asia
+        '81': 9,        // Japón
+        '82': 9,        // Corea del Sur
+        '86': 8,        // China
+        '91': 5.5,      // India
+        '62': 7,        // Indonesia
+        '63': 8,        // Filipinas
+        '66': 7,        // Tailandia
+        '84': 7,        // Vietnam
+    };
+
+    let utcOffset = 0;
+    const code3 = phoneNumber.substring(0, 3);
+    const code2 = phoneNumber.substring(0, 2);
+    const code1 = phoneNumber.substring(0, 1);
+
+    if (timezoneMap[code3] !== undefined) {
+        utcOffset = timezoneMap[code3];
+    } else if (timezoneMap[code2] !== undefined) {
+        utcOffset = timezoneMap[code2];
+    } else if (timezoneMap[code1] !== undefined) {
+        utcOffset = timezoneMap[code1];
+    }
+
+    // Calcular hora local usando UTC para evitar problemas con la hora del servidor
+    const now = new Date();
+    const utcHours = now.getUTCHours();
+    const utcMinutes = now.getUTCMinutes();
+
+    // Convertir todo a minutos para manejar offsets decimales (ej. India +5.5)
+    // utcOffset es un número (ej. -5), lo multiplicamos por 60 para tener minutos
+    let totalMinutes = (utcHours * 60) + utcMinutes + (utcOffset * 60);
+
+    // Normalizar a rango 0-1439 (minutos en un día) maneja números negativos
+    // ((n % m) + m) % m es la forma correcta de modulo para negativos en JS
+    totalMinutes = ((totalMinutes % 1440) + 1440) % 1440;
+
+    const localHours = Math.floor(totalMinutes / 60);
+
+    console.log(`[DEBUG] Greeting: Phone=${phoneNumber} Offset=${utcOffset} UTCHour=${utcHours}:${utcMinutes} LocalHour=${localHours}`);
+
+    // Retornar saludo según la hora
+    if (localHours >= 6 && localHours < 12) {
+        return '𝐁𝐮𝐞𝐧𝐨𝐬 𝐃𝐢𝐚𝐬';
+    } else if (localHours >= 12 && localHours < 20) {
+        return '𝐁𝐮𝐞𝐧𝐚𝐬 𝐓𝐚𝐫𝐝𝐞𝐬';
+    } else {
+        return '𝐁𝐮𝐞𝐧𝐚𝐬 𝐍𝐨𝐜𝐡𝐞𝐬';
+    }
+}
+
 export default {
     commands: ['help', 'menu'],
     async execute(ctx) {
@@ -12,6 +95,10 @@ export default {
             const userId = botId ? `${botId}@s.whatsapp.net` : ctx.sender;
             const prembotConfig = tokenService?.getPrembotConfig?.(userId);
             const botName = prembotConfig?.customName || 'Shoko Nishimiya';
+
+            // Obtener saludo dinámico según la hora del usuario
+            const greeting = getGreeting(senderNumber);
+
             let menuImage = 'https://2371phzjsd.ucarecd.net/cdfa4185-2787-48bf-a927-4e0444db9f73/bd574c6807562a7a652f3d33ee4ea4cf.jpg';
             if (prembotConfig?.customImage) {
                 menuImage = prembotConfig.customImage;
@@ -42,17 +129,14 @@ export default {
             };
             const requestedSection = sectionMap[section];
             const sections = {
-                header: `╭─────── ୨୧ ───────╮
-│  Bot Name › *${botName}*
-│  Hola, *${username}*
-│  ¿Listo para empezar?
-╰─── ⚐ DeltaByte ─────╯
+                header: `${greeting} *${username}*, 𝐬𝐨𝐲 *${botName}* 𝐲 𝐩𝐞𝐫𝐨 𝐩𝐚𝐬𝐚𝐫𝐦𝐞𝐥𝐚 𝐦𝐮𝐲 𝐛𝐢𝐞𝐧 𝐜𝐨𝐧𝐭𝐢𝐠𝐨 (˶ᵔ ᵕ ᵔ˶)
+╭─────── ୨୧ ───────╮
 │ ♡ Canal    › https://whatsapp.com/channel/0029VbByI3uL7UVYZD00xF2B
 │ ✮ Usuarios › *${userCount}*
 │ 𖣂 v3.3     › Usuario: ${username}
 ╰────────────────╯`,
                 economy: `*╭─⊹ Economía⊹ ࣪ ˖ 𐔌՞. .՞𐦯──╮*
-> ✎ \`Gana monedas, apuesta y juégatela\`
+> ✎ \`𝐆𝐚𝐧𝐚 𝐦𝐨𝐧𝐞𝐝𝐚𝐬, 𝐚𝐩𝐮𝐞𝐬𝐭𝐚 𝐲 𝐣𝐮𝐞́𝐠𝐚𝐭𝐞𝐥𝐚\`
 ✦ *::* *#economy* \`<on/off>\`
 > » Desactiva o activa el sistema de economía.
 ✦ *::* *#balance* • *#bal*
@@ -103,7 +187,7 @@ export default {
 > » Juega al 21 contra la casa.
 *╰────────────────╯*`,
                 gacha: `*╭─⊹ Gacha⊹ ࣪ ˖ (˶˃ ᵕ ˂˶)──╮*
-> ✎ \`Colecciona waifus e intercámbialos\`
+> ✎ \`𝐂𝐨𝐥𝐞𝐜𝐜𝐢𝐨𝐧𝐚 𝐰𝐚𝐢𝐟𝐮𝐬 𝐞 𝐢𝐧𝐭𝐞𝐫𝐜𝐚́𝐦𝐛𝐢𝐚𝐥𝐨𝐬\`
 ✦ *::* *#claim* • *#c*
 > » Reclama una waifu aleatoria.
 ✦ *::* *#harem* • *#miswaifu*
@@ -146,7 +230,7 @@ export default {
 > » Mira la información de tus waifus.
 *╰────────────────╯*`,
                 downloads: `*╭─⊹ Descargas⊹ ࣪ ˖ 𐔌՞. .՞𐦯──╮*
-> ✎ \`Descarga contenido de plataformas\`
+> ✎ \`𝐃𝐞𝐬𝐜𝐚𝐫𝐠𝐚 𝐜𝐨𝐧𝐭𝐞𝐧𝐢𝐝𝐨 𝐝𝐞 𝐩𝐥𝐚𝐭𝐚𝐟𝐨𝐫𝐦𝐚𝐬\`
 ✦ *::* *#ig* \`<link>\`
 > » Descarga un video de Instagram.
 ✦ *::* *#tiktok* \`<link>\`
@@ -165,7 +249,7 @@ export default {
 > » Descarga un video de Facebook.
 *╰────────────────╯*`,
                 search: `*╭─⊹ Buscadores⊹ ࣪ ˖ (╭ರ_•́)──╮*
-> ✎ \`Busca en plataformas algun contenido que desees\`
+> ✎ \`𝐁𝐮𝐬𝐜𝐚 𝐜𝐨𝐧𝐭𝐞𝐧𝐢𝐝𝐨 𝐞𝐧 𝐝𝐢𝐬𝐭𝐢𝐧𝐭𝐚𝐬 𝐩𝐥𝐚𝐭𝐚𝐟𝐨𝐫𝐦𝐚𝐬\`
 ✦ *::* *#googleimages* • *#gimg* \`<texto>\`
 > » Busca imágenes en Google.
 ✦ *::* *#pinterest* \`<texto>\`
@@ -186,7 +270,7 @@ export default {
 > » Busca y descarga aplicaciones APK.
 *╰────────────────╯*`,
                 utilities: `*╭─⊹ Utilidades⊹ ࣪ ˖ ꉂ(˵˃ ᗜ ˂˵)──╮*
-> ✎ \`Comandos útiles\`
+> ✎ \`𝐂𝐨𝐦𝐚𝐧𝐝𝐨𝐬 𝐝𝐞 𝐮𝐭𝐢𝐥𝐢𝐝𝐚𝐝𝐞𝐬\`
 ✦ *::* *#ping* • *#p*
 > » Calcula la velocidad del bot.
 ✦ *::* *#ai* • *#ia* \`<texto>\`
@@ -233,7 +317,7 @@ export default {
 > » Establece tu género.
 *╰────────────────╯*`,
                 fun: `*╭─⊹ Diversión⊹ ࣪ ˖ ꉂ(˵˃ ᗜ ˂˵)──╮*
-> ✎ \`Comandos para interactuar\`
+> ✎ \`𝐂𝐨𝐦𝐚𝐧𝐝𝐨𝐬 𝐩𝐚𝐫𝐚 𝐢𝐧𝐭𝐞𝐫𝐚𝐜𝐭𝐮𝐚𝐫\`
 ✦ *::* *#sleep* \`<@user>\`
 > » Duerme o toma una siesta con alguien.
 ✦ *::* *#hug* \`<@user>\`
@@ -256,7 +340,7 @@ export default {
 > » Toma café solo o acompañado.
 *╰────────────────╯*`,
                 games: `*╭─⊹ Juegos⊹ ࣪ ˖ ꉂ(˵˃ ᗜ ˂˵)──╮*
-> ✎ \`Diviértete con estos minijuegos\`
+> ✎ \`𝐃𝐢𝐯𝐢𝐞́𝐫𝐭𝐞𝐭𝐞 𝐜𝐨𝐧 𝐞𝐬𝐭𝐨𝐬 𝐦𝐢𝐧𝐢𝐣𝐮𝐞𝐠𝐨𝐬\`
 ✦ *::* *#tictactoe* • *#ttt* \`<@user>\`
 > » Juega al gato (tres en raya).
 ✦ *::* *#math*
@@ -283,7 +367,7 @@ export default {
 > » Matrimonio virtual con alguien.
 *╰────────────────╯*`,
                 subbot: `*╭─⊹ Subbot⊹ ࣪ ˖ (˶ᵔ ᵕ ᵔ˶)──╮*
-> ✎ \`Convierte tu número en un bot\`
+> ✎ \`𝐂𝐨𝐧𝐯𝐢𝐞𝐫𝐭𝐞 𝐭𝐮 𝐧𝐮́𝐦𝐞𝐫𝐨 𝐞𝐧 𝐮𝐧 𝐛𝐨𝐭\`
 ✦ *::* *#code*
 > » Obtén un código de 8 dígitos para vincular tu número.
 ✦ *::* *#qr* \`<código>\`
@@ -294,7 +378,7 @@ export default {
 > » Detén tu subbot vinculado.
 *╰────────────────╯*`,
                 nsfw: `*╭─⊹ NSFW⊹ ࣪ ˖ (,,•᷄‎ࡇ•᷅ ,,)?──╮*
-> ✎ \`Contenido para adultos\`
+> ✎ \`𝐂𝐨𝐧𝐭𝐞𝐧𝐢𝐝𝐨 𝐩𝐚𝐫𝐚 𝐚𝐝𝐮𝐥𝐭𝐨𝐬\`
 ✦ *::* *#hbikini*
 > » Imágenes de chicas en bikini.
 ✦ *::* *#himages*
@@ -309,7 +393,7 @@ export default {
 > » Muestra las tetas a alguien.
 *╰────────────────╯*`,
                 admin: `*╭─⊹ Administración⊹ ࣪ ˖ ꉂ(˵˃ ᗜ ˂˵)──╮*
-> ✎ \`Administra tu grupo y/o comunidad\`
+> ✎ \`𝐀𝐝𝐦𝐢𝐧𝐢𝐬𝐭𝐫𝐚 𝐭𝐮 𝐠𝐫𝐮𝐩𝐨 𝐲/𝐨 𝐜𝐨𝐦𝐮𝐧𝐢𝐝𝐚𝐝\`
 ✦ *::* *#kick* \`<@user>\`
 > » Expulsa a alguien del grupo.
 ✦ *::* *#ban* \`<@user>\`

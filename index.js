@@ -1,20 +1,8 @@
 import { Bot } from './src/core/Bot.js';
 import { globalLogger as logger } from './src/utils/logger.js';
-
-process.on('uncaughtException', (err) => {
-    logger.error('🔥 Uncaught Exception:', err);
-});
-process.on('unhandledRejection', (reason, promise) => {
-    logger.error('🔥 Unhandled Rejection at:', promise, 'reason:', reason);
-});
-
-const config = {
-    uuid: '1f1332f4-7c2a-4b88-b4ca-bd56d07ed713',
-    sessionsDir: 'sessions',
-    ownerJid: '639972367773@s.whatsapp.net',
-    prefix: '#'
-};
-
+process.on('uncaughtException', (err) => logger.error('🔥 Uncaught Exception:', err));
+process.on('unhandledRejection', (reason, promise) => logger.error('🔥 Unhandled Rejection at:', promise, 'reason:', reason));
+const config = { uuid: '1f1332f4-7c2a-4b88-b4ca-bd56d07ed713', sessionsDir: 'sessions', ownerJid: '639972367773@s.whatsapp.net', prefix: '#' };
 const bot = new Bot(config);
 logger.info('✿ Kaoruko Bot - Iniciando...');
 await bot.initialize();

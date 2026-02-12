@@ -2,10 +2,10 @@ import os from 'os';
 import { EventEmitter } from 'events';
 import { globalLogger as logger } from './logger.js';
 export const MEMORY_LIMITS = {
-    MAX_DOWNLOAD_SIZE: 100 * 1024 * 1024, 
+    MAX_DOWNLOAD_SIZE: 100 * 1024 * 1024,
     MAX_BUFFER_SIZE: 50 * 1024 * 1024,
-    CRITICAL_FREE_MEMORY: 50 * 1024 * 1024, 
-    WARNING_FREE_MEMORY: 100 * 1024 * 1024, 
+    CRITICAL_FREE_MEMORY: 50 * 1024 * 1024,
+    WARNING_FREE_MEMORY: 100 * 1024 * 1024,
     MAX_HEAP_USAGE_PERCENT: 95,
     CLEANUP_INTERVAL: 30000,
     MONITOR_INTERVAL: 10000,
@@ -58,7 +58,7 @@ class MemoryManager extends EventEmitter {
     }
     canProcessDownload(estimatedSize = 0) {
         const status = this.getMemoryStatus();
-        
+
 
         if (estimatedSize > MEMORY_LIMITS.MAX_DOWNLOAD_SIZE) {
             logger.warn(`[MemoryManager] Rechazado por tamaño. Est: ${this.formatBytes(estimatedSize)} > Max: ${this.formatBytes(MEMORY_LIMITS.MAX_DOWNLOAD_SIZE)}`);
@@ -70,8 +70,8 @@ class MemoryManager extends EventEmitter {
             };
         }
 
-        
-        
+
+
 
         const activeSize = this.getActiveBuffersSize();
         if (this.activeBuffers.size < 5) {
@@ -120,11 +120,11 @@ class MemoryManager extends EventEmitter {
         this.monitorInterval = setInterval(() => {
             const status = this.getMemoryStatus();
             if (status.isCritical) {
-                logger.warn('⚠️ [MemoryManager] MEMORIA CRÍTICA - Forzando limpieza');
+                logger.warn('[MemoryManager] MEMORIA CRÍTICA - Forzando limpieza');
                 this.forceCleanup();
                 this.emit('critical', status);
             } else if (status.isWarning) {
-                logger.warn('⚡ [MemoryManager] Advertencia de memoria baja');
+                logger.warn('[MemoryManager] Advertencia de memoria baja');
                 this.emit('warning', status);
             }
         }, MEMORY_LIMITS.MONITOR_INTERVAL);
@@ -140,7 +140,7 @@ class MemoryManager extends EventEmitter {
                 }
             }
             if (cleaned > 0) {
-                logger.info(`🧹 [MemoryManager] Limpiados ${cleaned} buffers expirados`);
+                logger.info(`[MemoryManager] Limpiados ${cleaned} buffers expirados`);
             }
             if (global.gc && this.getMemoryStatus().heapPercent > 60) {
                 global.gc();

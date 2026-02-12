@@ -4,12 +4,9 @@ import { PREFIXES, RATE_LIMIT, ERRORS } from '../config/constants.js';
 import { styleText, isOwner } from '../utils/helpers.js';
 import { globalLogger as logger } from '../utils/logger.js';
 
-
 let wapiModule = null;
 const getWapi = async () => {
-    if (!wapiModule) {
-        wapiModule = await import('@imjxsx/wapi');
-    }
+    if (!wapiModule) wapiModule = await import('@imjxsx/wapi');
     return wapiModule;
 };
 
@@ -28,21 +25,15 @@ export class MessageHandler {
         this.processedMessages = new Map();
         setInterval(() => this.cleanup(), 30000);
     }
-
     cleanup() {
         const now = Date.now();
         for (const [userId, data] of this.rateLimitMap) {
-            if (now - data.lastCommand > RATE_LIMIT.SPAM_WINDOW) {
-                this.rateLimitMap.delete(userId);
-            }
+            if (now - data.lastCommand > RATE_LIMIT.SPAM_WINDOW) this.rateLimitMap.delete(userId);
         }
         for (const [msgId, timestamp] of this.processedMessages) {
-            if (now - timestamp > 5000) {
-                this.processedMessages.delete(msgId);
-            }
+            if (now - timestamp > 5000) this.processedMessages.delete(msgId);
         }
     }
-
     checkRateLimit(userId) {
         const now = Date.now();
         let userData = this.rateLimitMap.get(userId);
@@ -50,9 +41,8 @@ export class MessageHandler {
             this.rateLimitMap.set(userId, { lastCommand: now, count: 1, timeout: null });
             return { limited: false };
         }
-        if (userData.timeout && now < userData.timeout) {
-            return { limited: true, message: ERRORS.SPAM_DETECTED };
-        } else if (userData.timeout) {
+        if (userData.timeout && now < userData.timeout) return { limited: true, message: ERRORS.SPAM_DETECTED };
+        else if (userData.timeout) {
             userData.timeout = null;
             userData.count = 0;
         }
@@ -64,99 +54,65 @@ export class MessageHandler {
             }
             return { limited: true, message: ERRORS.RATE_LIMITED };
         }
-        if (now - userData.lastCommand > RATE_LIMIT.SPAM_WINDOW) {
-            userData.count = 1;
-        } else {
-            userData.count++;
-        }
+        if (now - userData.lastCommand > RATE_LIMIT.SPAM_WINDOW) userData.count = 1;
+        else userData.count++;
         userData.lastCommand = now;
         return { limited: false };
     }
-
     isDuplicate(messageId) {
-        if (this.processedMessages.has(messageId)) {
-            return true;
-        }
+        if (this.processedMessages.has(messageId)) return true;
         this.processedMessages.set(messageId, Date.now());
         return false;
     }
-
-    static PREMBOT_EXCLUSIVE_COMMANDS = [
-        'setnamesubbot', 'setimagesubbot', 'configbot', 'miconfig',
-        'prembot', 'prembotadmin', 'padmin'
-    ];
-
+    static PREMBOT_EXCLUSIVE_COMMANDS = ['setnamesubbot', 'setimagesubbot', 'configbot', 'miconfig', 'prembot', 'prembotadmin', 'padmin'];
     async handleMessage(bot, m, isPrembot = false, isSubbot = false) {
-        if (!m.message) {
-            return;
-        }
-
+        if (!m.message) return;
         const messageType = Object.keys(m.message)[0];
         let text = '';
-        if (messageType === 'conversation') {
-            text = m.message.conversation;
-        } else if (messageType === 'extendedTextMessage') {
-            text = m.message.extendedTextMessage?.text || '';
-        } else if (messageType === 'imageMessage') {
-            text = m.message.imageMessage?.caption || '';
-        } else if (messageType === 'videoMessage') {
-            text = m.message.videoMessage?.caption || '';
-        }
-
+        if (messageType === 'conversation') text = m.message.conversation;
+        else if (messageType === 'extendedTextMessage') text = m.message.extendedTextMessage?.text || '';
+        else if (messageType === 'imageMessage') text = m.message.imageMessage?.caption || '';
+        else if (messageType === 'videoMessage') text = m.message.videoMessage?.caption || '';
         try {
             const isSpecialBot = isPrembot || isSubbot;
-            if (m.key.fromMe && !isSpecialBot) {
-                return;
-            }
-
+            if (m.key.fromMe && !isSpecialBot) return;
             const messageId = m.key.id;
-            if (this.isDuplicate(messageId)) {
-                return;
-            }
-
+            if (this.isDuplicate(messageId)) return;
             const chatId = m.key.remoteJid;
             let sender = m.key.participant || m.key.remoteJid;
             const senderLid = sender;
             let senderPhone = null;
-
-            if (m.key.participantAlt?.includes('@s.whatsapp.net')) {
-                senderPhone = m.key.participantAlt.split(':')[0].split('@')[0];
-            } else if (m.key.remoteJidAlt?.includes('@s.whatsapp.net')) {
-                senderPhone = m.key.remoteJidAlt.split(':')[0].split('@')[0];
-            } else if (m.senderAlt?.includes('@s.whatsapp.net')) {
-                senderPhone = m.senderAlt.split(':')[0].split('@')[0];
-            } else if (sender.includes('@s.whatsapp.net')) {
-                senderPhone = sender.split(':')[0].split('@')[0];
-            } else if (!chatId.endsWith('@g.us') && chatId.includes('@s.whatsapp.net')) {
-                senderPhone = chatId.split(':')[0].split('@')[0];
-            } else if (m.key.fromMe && bot.ws?.user?.id) {
-                senderPhone = bot.ws.user.id.split(':')[0].split('@')[0];
-            }
-
-            if (sender.includes('@lid') && senderPhone) {
-                sender = `${senderPhone}@s.whatsapp.net`;
-            } else if (sender.includes('@lid')) {
+            if (m.key.participantAlt?.includes('@s.whatsapp.net')) senderPhone = m.key.participantAlt.split(':')[0].split('@')[0];
+            else if (m.key.remoteJidAlt?.includes('@s.whatsapp.net')) senderPhone = m.key.remoteJidAlt.split(':')[0].split('@')[0];
+            else if (m.senderAlt?.includes('@s.whatsapp.net')) senderPhone = m.senderAlt.split(':')[0].split('@')[0];
+            else if (sender.includes('@s.whatsapp.net')) senderPhone = sender.split(':')[0].split('@')[0];
+            else if (!chatId.endsWith('@g.us') && chatId.includes('@s.whatsapp.net')) senderPhone = chatId.split(':')[0].split('@')[0];
+            else if (m.key.fromMe && bot.ws?.user?.id) senderPhone = bot.ws.user.id.split(':')[0].split('@')[0];
+            if (sender.includes('@lid')) {
                 const lidMatch = sender.match(/^(\d+)/);
-                if (lidMatch) {
-                    sender = `${lidMatch[1]}@s.whatsapp.net`;
-                }
+                if (senderPhone) sender = `${senderPhone}@s.whatsapp.net`;
+                else if (chatId.endsWith('@g.us') && lidMatch) {
+                    try {
+                        const groupMetadata = await bot.ws.groupMetadata(chatId);
+                        const participant = groupMetadata.participants.find(p => p.lid === sender || p.id === sender);
+                        if (participant && participant.id && !participant.id.includes('@lid')) {
+                            sender = participant.id;
+                            senderPhone = sender.split('@')[0];
+                        } else sender = `${lidMatch[1]}@s.whatsapp.net`;
+                    } catch (err) {
+                        logger.error('Error resolving LID from Group Metadata:', err);
+                        sender = `${lidMatch[1]}@s.whatsapp.net`;
+                    }
+                } else if (lidMatch) sender = `${lidMatch[1]}@s.whatsapp.net`;
             }
-
             const isGroup = chatId.endsWith('@g.us');
             const isOwnerSender = isOwner(sender);
-
             const ctx = {
                 bot: {
-                    sendMessage: async (jid, content, options) => {
-                        return await bot.ws.sendMessage(jid, content, options);
-                    },
+                    sendMessage: async (jid, content, options) => await bot.ws.sendMessage(jid, content, options),
                     sock: bot.ws,
-                    groupMetadata: async (jid) => {
-                        return await bot.ws.groupMetadata(jid);
-                    },
-                    groupParticipantsUpdate: async (jid, participants, action) => {
-                        return await bot.ws.groupParticipantsUpdate(jid, participants, action);
-                    }
+                    groupMetadata: async (jid) => await bot.ws.groupMetadata(jid),
+                    groupParticipantsUpdate: async (jid, participants, action) => await bot.ws.groupParticipantsUpdate(jid, participants, action)
                 },
                 msg: m,
                 sender: sender,
@@ -183,36 +139,22 @@ export class MessageHandler {
                 economySeason: this.economySeason,
                 tokenService: global.tokenService,
                 prembotManager: global.prembotManager,
-                from: {
-                    id: sender,
-                    jid: sender,
-                    name: m.pushName || 'Usuario'
-                },
+                from: { id: sender, jid: sender, name: m.pushName || 'Usuario' },
                 reply: async (text, options = {}) => {
                     if (!bot.ws) return;
                     return await bot.ws.sendMessage(chatId, { text, ...options }, { quoted: m });
                 },
                 replyWithAudio: async (url, options = {}) => {
                     if (!bot.ws) return;
-                    return await bot.ws.sendMessage(chatId, {
-                        audio: { url },
-                        mimetype: 'audio/mpeg',
-                        ...options
-                    }, { quoted: m });
+                    return await bot.ws.sendMessage(chatId, { audio: { url }, mimetype: 'audio/mpeg', ...options }, { quoted: m });
                 },
                 replyWithVideo: async (url, options = {}) => {
                     if (!bot.ws) return;
-                    return await bot.ws.sendMessage(chatId, {
-                        video: { url },
-                        ...options
-                    }, { quoted: m });
+                    return await bot.ws.sendMessage(chatId, { video: { url }, ...options }, { quoted: m });
                 },
                 replyWithImage: async (url, options = {}) => {
                     if (!bot.ws) return;
-                    return await bot.ws.sendMessage(chatId, {
-                        image: { url },
-                        ...options
-                    }, { quoted: m });
+                    return await bot.ws.sendMessage(chatId, { image: { url }, ...options }, { quoted: m });
                 },
                 download: async (message) => {
                     const wapi = await getWapi();
@@ -221,59 +163,37 @@ export class MessageHandler {
                     const type = Object.keys(msg.message)[0];
                     const stream = await downloadContentFromMessage(msg.message[type], type.replace('Message', ''));
                     let buffer = Buffer.from([]);
-                    for await (const chunk of stream) {
-                        buffer = Buffer.concat([buffer, chunk]);
-                    }
+                    for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk]);
                     return buffer;
                 },
                 prefix: this.PREFIX
             };
-
-            
-
-
             const lastXp = this.cacheManager.get(`xp_${sender}`);
             if (!lastXp && text.length > 3) {
                 const xpAmount = Math.floor(Math.random() * 6) + 5;
                 this.levelService.addXp(sender, xpAmount).then(res => {
-                    if (res.leveledUp) {
-                        ctx.reply(styleText(`🎉 *¡SUBISTE DE NIVEL!*\n\n> Nivel: *${res.currentLevel}*`));
-                    }
+                    if (res.leveledUp) ctx.reply(styleText(`🎉 *¡SUBISTE DE NIVEL!*\n\n> Nivel: *${res.currentLevel}*`));
                 }).catch(e => logger.error('XP Error:', e));
                 this.cacheManager.set(`xp_${sender}`, true, 30);
             }
-
             if (global.beforeHandlers?.length > 0) {
-                const results = await Promise.allSettled(
-                    global.beforeHandlers.map(({ handler, plugin }) =>
-                        handler(ctx).catch(err => {
-                            logger.error(`Error in before handler for ${plugin}:`, err);
-                            throw err;
-                        })
-                    )
-                );
+                const results = await Promise.allSettled(global.beforeHandlers.map(({ handler, plugin }) => handler(ctx).catch(err => {
+                    logger.error(`Error in before handler for ${plugin}:`, err);
+                    throw err;
+                })));
                 results.forEach((result, idx) => {
-                    if (result.status === 'rejected') {
-                        logger.error(`Before handler ${global.beforeHandlers[idx].plugin} failed`);
-                    }
+                    if (result.status === 'rejected') logger.error(`Before handler ${global.beforeHandlers[idx].plugin} failed`);
                 });
             }
-
             const prefix = PREFIXES.find(p => text.startsWith(p));
-
-            if (!text || !prefix) {
-                return;
-            }
-
+            if (!text || !prefix) return;
             if (!isGroup && global.db?.settings?.antiPrivado) {
-                const isOwner = sender.split('@')[0] === global.tokenService.OWNER_JID?.split('@')[0] ||
-                    m.key.fromMe;
+                const isOwner = sender.split('@')[0] === global.tokenService.OWNER_JID?.split('@')[0] || m.key.fromMe;
                 if (!isOwner && !isSpecialBot) {
                     logger.info(`[AntiPrivado] Bloqueado mensaje de ${sender} en chat ${chatId}`);
                     return;
                 }
             }
-
             const rateCheck = this.checkRateLimit(sender);
             if (rateCheck.limited) {
                 logger.warn(`🔍 [MH] Rate Limit activado para ${sender}`);
@@ -286,40 +206,23 @@ export class MessageHandler {
                 }
                 return;
             }
-
             const args = text.slice(prefix.length).trim().split(/\s+/);
             const commandName = args.shift()?.toLowerCase();
-
             ctx.args = args;
             ctx.command = commandName;
-
             if (!commandName) return;
-
             const commandData = global.commandMap.get(commandName);
-
             if (!commandData) {
-                const fkontak = {
-                    key: { participants: '0@s.whatsapp.net', remoteJid: 'status@broadcast', fromMe: false, id: 'Halo' },
-                    message: {
-                        contactMessage: {
-                            vcard: `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:y\nitem1.TEL;waid=${sender.split('@')[0]}:${sender.split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD`
-                        }
-                    },
-                    participant: '0@s.whatsapp.net'
-                };
-                await bot.ws.sendMessage(chatId, {
-                    text: styleText(`(ó﹏ò｡) Lo siento, el comando *${commandName}* no existe en mis comandos.`)
-                }, { quoted: fkontak });
+                const fkontak = { key: { participants: '0@s.whatsapp.net', remoteJid: 'status@broadcast', fromMe: false, id: 'Halo' }, message: { contactMessage: { vcard: `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:y\nitem1.TEL;waid=${sender.split('@')[0]}:${sender.split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD` } }, participant: '0@s.whatsapp.net' };
+                await bot.ws.sendMessage(chatId, { text: styleText(`(ó﹏ò｡) Lo siento, el comando *${commandName}* no existe en mis comandos.`) }, { quoted: fkontak });
                 return;
             }
-
             if (MessageHandler.PREMBOT_EXCLUSIVE_COMMANDS.includes(commandName)) {
                 if (isSpecialBot && !m.key.fromMe) {
                     await ctx.reply(styleText('ꕢ Este comando solo puede ser usado por el dueño del bot.'));
                     return;
                 }
             }
-
             if (isGroup) {
                 const groupData = await this.dbService.getGroup(chatId);
                 if (groupData?.primaryBot) {
@@ -327,48 +230,34 @@ export class MessageHandler {
                     if (bot.ws?.user?.id) currentBotId = bot.ws.user.id;
                     else if (bot.ws?.state?.creds?.me?.id) currentBotId = bot.ws.state.creds.me.id;
                     else if (bot.user?.id) currentBotId = bot.user.id;
-
                     if (currentBotId) {
                         currentBotId = currentBotId.split(':')[0].split('@')[0];
                         if (currentBotId !== groupData.primaryBot) {
                             const setPrimaryCommands = ['setprimary', 'setmain', 'botprincipal'];
-                            if (!setPrimaryCommands.includes(commandName)) {
-                                logger.info(`[MH] WARN: ID mismatch (${currentBotId} vs ${groupData.primaryBot}) but ALLOWING execution to fix bug.`);
-                            }
+                            if (!setPrimaryCommands.includes(commandName)) logger.info(`[MH] WARN: ID mismatch (${currentBotId} vs ${groupData.primaryBot}) but ALLOWING execution to fix bug.`);
                         }
-                    } else {
-                        logger.warn('[MH] No se pudo obtener ID del bot, ignorando check de PrimaryBot');
-                    }
+                    } else logger.warn('[MH] No se pudo obtener ID del bot, ignorando check de PrimaryBot');
                 }
             }
-
             await commandData.execute(ctx);
-
             if (!ctx.userData.stats) ctx.userData.stats = {};
             const newCommands = (ctx.userData.stats.commands || 0) + 1;
             ctx.userData.stats.commands = newCommands;
-
             const pushName = m.pushName || m.key.pushName || undefined;
             const updates = { 'stats.commands': newCommands };
-            if (pushName && ctx.userData.name !== pushName) {
-                updates.name = pushName;
-            }
+            if (pushName && ctx.userData.name !== pushName) updates.name = pushName;
             await this.dbService.updateUser(sender, updates);
-
             if (this.levelService) {
                 const xpAmount = Math.floor(Math.random() * 25) + 10;
                 await this.levelService.addXp(sender, xpAmount);
             }
-
         } catch (error) {
             logger.error('ꕢ Error procesando mensaje:', error);
             const prefix = PREFIXES.find(p => text.startsWith(p));
             if (prefix && text.trim().length > prefix.length) {
                 const chatId = m.key.remoteJid;
                 try {
-                    await bot.ws.sendMessage(chatId, {
-                        text: styleText(ERRORS.GENERIC_ERROR)
-                    }, { quoted: m });
+                    await bot.ws.sendMessage(chatId, { text: styleText(ERRORS.GENERIC_ERROR) }, { quoted: m });
                 } catch { }
             }
         }

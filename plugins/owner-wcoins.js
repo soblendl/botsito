@@ -19,6 +19,26 @@ export default {
             targetUser = quoted;
         }
 
+        // Fix: Resolver LID a Phone JID si es necesario
+        if (targetUser && (targetUser.includes('@lid') || !targetUser.includes('@s.whatsapp.net'))) {
+            if (ctx.isGroup) {
+                try {
+                    const groupMetadata = await ctx.bot.groupMetadata(ctx.chatId);
+                    const participant = groupMetadata.participants.find(p => p.lid === targetUser || p.id === targetUser);
+                    if (participant && participant.id) {
+                        targetUser = participant.id;
+                    }
+                } catch (e) {
+                    console.error('Error resolving LID in wcoins:', e);
+                }
+            }
+
+            // Si después de intentar resolver sigue siendo LID, intentar buscar en store o fallar
+            if (targetUser.includes('@lid')) {
+                return await ctx.reply(styleText('ꕤ No se pudo verificar el usuario destino. Intenta mencionarlo nuevamente o esperar unos segundos.'));
+            }
+        }
+
         if (!targetUser) {
             return await ctx.reply(styleText(
                 'ꕥ *WCOINS - Dar Coins (Owner)*\n\n' +

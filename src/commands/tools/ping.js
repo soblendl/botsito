@@ -15,7 +15,6 @@ export default {
             text: styleText(
                 `✿ *Pong!*\n\n` +
                 `> ⚬ Latencia: *${latency}ms*\n` +
-                `> ⚬ Tiempo de respuesta: *${latency}ms*\n` +
                 `> ⚬ Estado: ${latency < 100 ? 'Excelente' : latency < 300 ? 'Bueno' : 'Lento'}`
             ),
             edit: msg.key

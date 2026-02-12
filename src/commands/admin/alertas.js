@@ -2,23 +2,14 @@ import { isAdmin, styleText } from '../../utils/helpers.js';
 export default {
     commands: ['alertas'],
     async execute(ctx) {
-        console.log('[DEBUG] admin-alertas: Inicio del comando');
-        if (!ctx.isGroup) {
-            return await ctx.reply(styleText('ꕢ Este comando solo funciona en grupos.'));
-        }
+        if (!ctx.isGroup) return await ctx.reply(styleText('ꕢ Este comando solo funciona en grupos.'));
         const admin = await isAdmin(ctx.bot, ctx.chatId, ctx.senderLid || ctx.sender);
-        if (!admin) {
-            return await ctx.reply(styleText('ꕢ Solo los administradores pueden usar este comando.'));
-        }
-        if (!ctx.args[0] || !['on', 'off'].includes(ctx.args[0].toLowerCase())) {
-            return await ctx.reply(styleText('ꕢ Uso: */alertas* `<on/off>`'));
-        }
+        if (!admin) return await ctx.reply(styleText('ꕢ Solo los administradores pueden usar este comando.'));
+        if (!ctx.args[0] || !['on', 'off'].includes(ctx.args[0].toLowerCase())) return await ctx.reply(styleText('ꕢ Uso: */alertas* `<on/off>`'));
         try {
             const enable = ctx.args[0].toLowerCase() === 'on';
             const groupData = await ctx.dbService.getGroup(ctx.chatId);
-            if (!groupData.settings) {
-                groupData.settings = {};
-            }
+            if (!groupData.settings) groupData.settings = {};
             await ctx.dbService.updateGroup(ctx.chatId, { 'settings.alerts': enable });
             await ctx.reply(styleText(`ꕣ Sistema de alertas ${enable ? 'activado ✅' : 'desactivado ❌'}.`));
         } catch (error) {
