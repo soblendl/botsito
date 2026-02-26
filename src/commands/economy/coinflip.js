@@ -1,4 +1,4 @@
-import { formatNumber, styleText } from '../../utils/helpers.js';
+import { formatNumber, styleText, getCurrencyName } from '../../utils/helpers.js';
 export default {
     commands: ['coinflip', 'cf'],
     async execute(ctx) {
@@ -14,8 +14,9 @@ export default {
             return await ctx.reply(styleText('ꕢ Debes elegir cara o cruz.'));
         }
         const userData = await ctx.dbService.getUser(ctx.sender);
+        const currencyName = await getCurrencyName(ctx);
         if ((userData.economy?.coins || 0) < amount) {
-            return await ctx.reply(styleText('ꕢ No tienes suficientes coins.'));
+            return await ctx.reply(styleText(`ꕢ No tienes suficientes ${currencyName}.`));
         }
         const result = Math.random() < 0.5 ? 'cara' : 'cruz';
         const won = result === choice;
@@ -23,12 +24,12 @@ export default {
             await ctx.dbService.updateUser(ctx.sender, {
                 'economy.coins': (userData.economy?.coins || 0) + amount
             });
-            await ctx.reply(styleText(`ꕣ ¡Salió *${result}*! Ganaste *¥${formatNumber(amount)}* coins.`));
+            await ctx.reply(styleText(`ꕣ ¡Salió *${result}*! Ganaste *¥${formatNumber(amount)}* ${currencyName}.`));
         } else {
             await ctx.dbService.updateUser(ctx.sender, {
                 'economy.coins': (userData.economy?.coins || 0) - amount
             });
-            await ctx.reply(styleText(`ꕢ Salió *${result}*. Perdiste *¥${formatNumber(amount)}* coins.`));
+            await ctx.reply(styleText(`ꕢ Salió *${result}*. Perdiste *¥${formatNumber(amount)}* ${currencyName}.`));
         }
     }
 };

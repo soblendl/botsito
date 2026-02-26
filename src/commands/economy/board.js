@@ -1,4 +1,4 @@
-import { formatNumber, formatNumberLarge, styleText, getName } from '../../utils/helpers.js';
+import { formatNumber, formatNumberLarge, styleText, getName, getCurrencyName } from '../../utils/helpers.js';
 import { globalLogger as logger } from '../../utils/logger.js';
 
 export default {
@@ -13,6 +13,8 @@ export default {
 
         let message = 'ꕣ Ranking Global de Economía\n\n';
         message += '➭ Top 10 Ricachones\n\n';
+
+        const currencyName = await getCurrencyName(ctx);
 
         let groupMetadata = null;
         if (isGroup && chatId) {
@@ -58,9 +60,9 @@ export default {
             const name = user.displayName;
             // Use mention format
             message += `${medal} @${userNumber}\n`;
-            message += `> ⛃ Coins » *¥${formatNumberLarge(user.coins)}*\n`;
-            message += `> ❖ Banco » *¥${formatNumberLarge(user.bank)}*\n`;
-            message += `> ✧ Total » *¥${formatNumberLarge(user.total)}*\n\n`;
+            message += `> ⛃ Coins » *¥${formatNumberLarge(user.coins)}* ${currencyName}\n`;
+            message += `> ❖ Banco » *¥${formatNumberLarge(user.bank)}* ${currencyName}\n`;
+            message += `> ✧ Total » *¥${formatNumberLarge(user.total)}* ${currencyName}\n\n`;
             mentions.push(user.id);
         });
 

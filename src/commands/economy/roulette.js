@@ -1,4 +1,4 @@
-import { formatNumber, styleText } from '../../utils/helpers.js';
+import { formatNumber, styleText, getCurrencyName } from '../../utils/helpers.js';
 export default {
     commands: ['roulette', 'rt'],
     async execute(ctx) {
@@ -11,6 +11,7 @@ export default {
         const userData = await ctx.dbService.getUser(ctx.sender);
         const economy = userData.economy || {};
         const userCoins = economy.coins || 0;
+        const currencyName = await getCurrencyName(ctx);
         if (!ctx.args[0] || !ctx.args[1]) {
             return await ctx.reply(styleText('ꕢ Uso incorrecto.\n> Uso: *#roulette* `<red/black>` `<cantidad>`'));
         }
@@ -23,7 +24,7 @@ export default {
             return await ctx.reply(styleText('ꕢ Cantidad inválida.'));
         }
         if (amount > userCoins) {
-            return await ctx.reply(styleText('ꕢ No tienes suficientes coins.'));
+            return await ctx.reply(styleText(`ꕢ No tienes suficientes ${currencyName}.`));
         }
         const result = Math.random() < 0.5 ? 'red' : 'black';
         const won = result === choice;
@@ -36,8 +37,8 @@ export default {
             await ctx.reply(styleText(
                 `ꕣ *¡Ganaste!*\n\n` +
                 `Salió: ${result} ${result === 'red' ? '🔴' : '⚫'}\n` +
-                `Ganancia: +${formatNumber(winAmount)} coins\n` +
-                `Balance: ${formatNumber(newBalance)} coins`
+                `Ganancia: +${formatNumber(winAmount)} ${currencyName}\n` +
+                `Balance: ${formatNumber(newBalance)} ${currencyName}`
             ));
         } else {
             const newBalance = Math.max(0, userCoins - amount);
@@ -47,8 +48,8 @@ export default {
             await ctx.reply(styleText(
                 `ꕣ *Perdiste*\n\n` +
                 `Salió: ${result} ${result === 'red' ? '🔴' : '⚫'}\n` +
-                `Pérdida: -${formatNumber(amount)} coins\n` +
-                `Balance: ${formatNumber(newBalance)} coins`
+                `Pérdida: -${formatNumber(amount)} ${currencyName}\n` +
+                `Balance: ${formatNumber(newBalance)} ${currencyName}`
             ));
         }
     }

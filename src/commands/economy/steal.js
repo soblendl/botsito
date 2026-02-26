@@ -1,4 +1,4 @@
-import { formatNumber, extractMentions, styleText } from '../../utils/helpers.js';
+import { formatNumber, extractMentions, styleText, getCurrencyName } from '../../utils/helpers.js';
 
 export default {
     commands: ['steal', 'robar'],
@@ -26,12 +26,12 @@ export default {
             return await ctx.reply(styleText('ꕢ Debes mencionar a un usuario.\nUso: *#steal* @usuario'));
         }
 
-        
+
         if (target.includes('@lid')) {
-            
-            
-            
-            
+
+
+
+
             const participant = ctx.msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.find(j => j.includes('@s.whatsapp.net'));
             if (participant) target = participant;
         }
@@ -43,6 +43,7 @@ export default {
         const userData = (await ctx.dbService.getUser(ctx.sender))?.economy || {};
         const targetUser = await ctx.dbService.getUser(target);
         const targetData = targetUser?.economy || {};
+        const currencyName = await getCurrencyName(ctx);
 
         const SUCCESS_RATE = 0.5;
         const success = Math.random() < SUCCESS_RATE;
@@ -59,7 +60,7 @@ export default {
             });
 
             await ctx.reply(
-                styleText(`ꕣ Robaste *¥${formatNumber(stolen)}* coins a @${target.split('@')[0]}`),
+                styleText(`ꕣ Robaste *¥${formatNumber(stolen)}* ${currencyName} a @${target.split('@')[0]}`),
                 { mentions: [target] }
             );
         } else {
@@ -72,8 +73,8 @@ export default {
             await ctx.reply(
                 styleText(`ꕢ *Te atraparon!*\n\n` +
                     `Intentaste robar a @${target.split('@')[0]} pero te atraparon.\n` +
-                    `> ✿ Multa » *¥${formatNumber(fine)}* coins\n` +
-                    `> ✿ Tu balance » *¥${formatNumber(Math.max(0, userData.coins - fine))}* coins`),
+                    `> ✿ Multa » *¥${formatNumber(fine)}* ${currencyName}\n` +
+                    `> ✿ Tu balance » *¥${formatNumber(Math.max(0, userData.coins - fine))}* ${currencyName}`),
                 { mentions: [target] }
             );
         }

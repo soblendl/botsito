@@ -3,7 +3,7 @@ import QRCode from 'qrcode';
 import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import pino from 'pino'; // Import pino
+import pino from 'pino';
 import { globalLogger as logger } from '../../utils/logger.js';
 
 const BLOCKED_COMMANDS = [
@@ -16,7 +16,6 @@ const BLOCKED_COMMANDS = [
     'addprem', 'delprem',
     'clearsession', 'deletesession'
 ];
-
 const LIMITS = {
     MAX_GROUPS: 50,
     MAX_CHATS: 200,
@@ -26,7 +25,6 @@ const LIMITS = {
     RECONNECT_ATTEMPTS: 5,
     BACKUP_INTERVAL: 5 * 60 * 1000
 };
-
 class PrembotManager {
     constructor(tokenService) {
         this.tokenService = tokenService;
@@ -36,15 +34,12 @@ class PrembotManager {
         this.spamTracker = new Map();
         this.groupCounts = new Map();
     }
-
     generateCode() {
         return Math.random().toString(36).substring(2, 10).toUpperCase();
     }
-
     isCommandBlocked(command) {
         return BLOCKED_COMMANDS.includes(command.toLowerCase());
     }
-
     createPairingCode(userId, tokenId) {
         const code = this.generateCode();
         this.codes.set(code, {
@@ -55,21 +50,17 @@ class PrembotManager {
         setTimeout(() => this.codes.delete(code), 5 * 60 * 1000);
         return code;
     }
-
     async startPrembot(tokenId, chatId, mainSock, phoneNumber) {
         const validation = this.tokenService.validateToken(tokenId);
         if (!validation.valid) {
             return { success: false, message: `ꕢ ${validation.error}` };
         }
-
         let cleanPhone = phoneNumber.replace(/[^0-9]/g, '');
         if (cleanPhone.length < 10 || cleanPhone.length > 15) {
             return { success: false, message: `ꕢ Número de teléfono inválido: ${cleanPhone} (${cleanPhone.length} dígitos)` };
         }
-
         logger.info(`[Prembot] Phone number received: ${phoneNumber}`);
         logger.info(`[Prembot] Clean phone number: ${cleanPhone}`);
-
         const userId = `${cleanPhone}@s.whatsapp.net`;
         if (this.prembots.has(userId)) {
             return { success: false, message: 'ꕢ Ya tienes un Prembot activo' };
@@ -77,45 +68,32 @@ class PrembotManager {
         if (this.pendingConnections.has(userId)) {
             return { success: false, message: 'ꕢ Ya hay una conexión en proceso' };
         }
-
         this.pendingConnections.set(userId, {
             startTime: Date.now(),
             tokenId: tokenId
         });
-
         try {
             const sessionPath = path.join(process.cwd(), 'prembots', cleanPhone);
             if (fs.existsSync(sessionPath)) {
                 fs.rmSync(sessionPath, { recursive: true, force: true });
             }
             fs.mkdirSync(sessionPath, { recursive: true });
-
             const prembotUUID = uuidv4();
             const auth = new LocalAuth(prembotUUID, sessionPath);
             const account = { jid: '', pn: `${cleanPhone}@s.whatsapp.net`, name: 'Kaoruko Prembot' };
-
             logger.info(`[Prembot] Account config (masked)`);
-
-            // Fix: Use generic pino logger to satisfy wapi requirements
-            // Using Windows signature since host is Windows
             const browserConfig = ['Windows', 'Chrome', '20.0.04'];
             const botLogger = pino({ level: 'info' });
-
             const prembotInstance = new Bot(prembotUUID, auth, account, {
                 browser: browserConfig,
                 logger: botLogger,
-                mobile: false // Explicitly state this is not mobile API
+                mobile: false
             });
-
-            // FORCE OVERRIDE LOGGER to ensure wapi uses it
             prembotInstance.logger = botLogger;
             if (prembotInstance.sock) prembotInstance.sock.logger = botLogger;
             if (prembotInstance.ws) prembotInstance.ws.logger = botLogger;
-
-            // Debug probe
             logger.info(`[Prembot] Instance created. Keys: ${Object.keys(prembotInstance).join(', ')}`);
             if (prembotInstance.ws) logger.info(`[Prembot] WS initialized immediately. Keys: ${Object.keys(prembotInstance.ws).join(', ')}`);
-
             let isConnected = false;
             const timeout = setTimeout(() => {
                 if (!isConnected) {
@@ -126,25 +104,20 @@ class PrembotManager {
                     }).catch(() => { });
                 }
             }, 3 * 60 * 1000);
-
-            // Listen for connection updates
             prembotInstance.ws?.ev.on('connection.update', (update) => {
                 const { connection, lastDisconnect } = update;
                 if (connection === 'close') {
-                    // Only log non-auth failures
                     if (lastDisconnect?.error?.output?.statusCode !== 401) {
                         logger.warn(`[Prembot] Closed during pairing: ${lastDisconnect?.error?.message}`);
                     }
                 }
             });
-
             prembotInstance.on('open', async (acc) => {
                 clearTimeout(timeout);
                 isConnected = true;
                 this.pendingConnections.delete(userId);
                 this.tokenService.useToken(tokenId, userId);
                 this.tokenService.registerPrembot(userId, tokenId);
-
                 const prembotData = {
                     bot: prembotInstance,
                     chatId,
@@ -156,10 +129,8 @@ class PrembotManager {
                     stats: { messages: 0, commands: 0 },
                     rateLimit: { commands: [], messages: [] }
                 };
-
                 this.prembots.set(userId, prembotData);
                 this.startBackupInterval(userId);
-
                 const userName = acc?.name || 'Usuario';
                 await mainSock.sendMessage(chatId, {
                     text: `ꕢ *PREMBOT ACTIVADO*\n\n` +
@@ -172,10 +143,8 @@ class PrembotManager {
                         `• Cmds/min: ${LIMITS.COMMANDS_PER_MINUTE}\n\n` +
                         `> _Usa #prembot status para ver stats_`
                 });
-
                 this.setupMessageHandler(prembotInstance, userId);
             });
-
             prembotInstance.on('close', async (reason) => {
                 logger.info('[Prembot] Disconnected: ' + reason);
                 clearTimeout(timeout);
@@ -183,7 +152,6 @@ class PrembotManager {
                     const reasonStr = String(reason).toLowerCase();
                     const isFatal = reasonStr.includes('401') || reasonStr.includes('403') || reasonStr.includes('428');
                     this.prembots.delete(userId);
-
                     if (!isFatal) {
                         logger.info(`[Prembot] Connection lost for ${cleanPhone}. Reconnecting in 5s...`);
                         setTimeout(() => this.restartSession(userId, mainSock, tokenId), 5000);
@@ -192,40 +160,25 @@ class PrembotManager {
                     this.pendingConnections.delete(userId);
                     let errorMsg = 'ꕢ No se pudo conectar';
                     const reasonStr = String(reason).toLowerCase();
-
                     if (reasonStr.includes('401')) errorMsg = 'ꕢ Código inválido';
                     else if (reasonStr.includes('403')) errorMsg = 'ꕢ WhatsApp bloqueó temporalmente';
                     else if (reasonStr.includes('428')) errorMsg = 'ꕢ Máximo de dispositivos alcanzado';
                     else if (reasonStr.includes('515')) errorMsg = 'ꕢ Error de WhatsApp. Reintenta.';
-
                     mainSock.sendMessage(chatId, { text: errorMsg }).catch(() => { });
                 }
             });
-
             prembotInstance.on('error', (err) => {
                 logger.error('[Prembot] Error:', err);
             });
-
             logger.info(`[Prembot] Starting OTP login for: ${cleanPhone}`);
-
-            // Initialize socket first
             await prembotInstance.login('otp');
-
-            // Wait for socket to stabilize (8s is good)
             await new Promise(resolve => setTimeout(resolve, 8000));
-
-            // Request pairing code
             try {
-                // Determine socket object
                 const socket = prembotInstance.ws || prembotInstance.sock || prembotInstance.socket;
-
                 if (!socket || !socket.requestPairingCode) {
                     throw new Error('El socket no está listo (ws not found)');
                 }
-
                 logger.info(`[Prembot] Requesting pairing code for ${cleanPhone}...`);
-
-                // Simple retry loop without broken readyState check
                 let code;
                 let attempts = 0;
                 while (attempts < 5) {
@@ -238,9 +191,7 @@ class PrembotManager {
                         await new Promise(resolve => setTimeout(resolve, 3000));
                     }
                 }
-
                 const formatted = code?.match(/.{1,4}/g)?.join('-') || code;
-
                 await mainSock.sendMessage(chatId, {
                     text: `🌟 *PREMBOT - Código de Vinculación*\n\n` +
                         `\`${formatted}\`\n\n` +
@@ -252,8 +203,7 @@ class PrembotManager {
                         `⑤ Ingresa el código\n\n` +
                         `> _Expira en 3 minutos_`
                 });
-                await mainSock.sendMessage(chatId, { text: code }); // Send raw code for easy copy
-
+                await mainSock.sendMessage(chatId, { text: code });
                 return { success: true, message: 'ꕢ Código enviado. Revisa tu chat.' };
             } catch (pairingError) {
                 logger.error('[Prembot] Pairing Error:', pairingError);
@@ -265,7 +215,6 @@ class PrembotManager {
             return { success: false, message: 'ꕢ Error: ' + error.message };
         }
     }
-
     setupMessageHandler(prembotInstance, ownerId) {
         prembotInstance.ws?.ev.on('messages.upsert', async ({ messages }) => {
             for (const m of messages) {
@@ -273,15 +222,12 @@ class PrembotManager {
                 const chatId = m.key.remoteJid;
                 const prembotData = this.prembots.get(ownerId);
                 if (!prembotData) continue;
-
                 const text = m.message.conversation ||
                     m.message.extendedTextMessage?.text || '';
-
                 if (m.key.fromMe) {
                     const isCommand = text.startsWith('#') || text.startsWith('/') || text.startsWith('!');
                     if (!isCommand) continue;
                 }
-
                 if (!this.tokenService.isPrembotActive(ownerId)) {
                     await prembotInstance.sendMessage(chatId, {
                         text: 'ꕢ Este Prembot ha expirado o fue desactivado.'
@@ -289,23 +235,18 @@ class PrembotManager {
                     this.stopPrembot(ownerId);
                     return;
                 }
-
                 const rateCheck = this.checkRateLimit(ownerId, 'messages');
                 if (!rateCheck.allowed) continue;
-
                 prembotData.stats.messages++;
                 this.tokenService.updateStats(ownerId, 'messages');
-
                 if (text.startsWith('#') || text.startsWith('/') || text.startsWith('!')) {
                     const command = text.slice(1).split(' ')[0].toLowerCase();
-
                     if (this.isCommandBlocked(command)) {
                         await prembotInstance.sendMessage(chatId, {
                             text: 'ꕢ Este comando está bloqueado en Prembots.'
                         });
                         continue;
                     }
-
                     const cmdRateCheck = this.checkRateLimit(ownerId, 'commands');
                     if (!cmdRateCheck.allowed) {
                         await prembotInstance.sendMessage(chatId, {
@@ -313,11 +254,9 @@ class PrembotManager {
                         });
                         continue;
                     }
-
                     prembotData.stats.commands++;
                     this.tokenService.updateStats(ownerId, 'commands');
                 }
-
                 if (global.messageHandler) {
                     try {
                         await global.messageHandler.handleMessage(prembotInstance, m, true, false);
@@ -327,7 +266,6 @@ class PrembotManager {
                 }
             }
         });
-
         prembotInstance.ws?.ev.on('groups.update', (updates) => {
             for (const update of updates) {
                 const currentCount = this.groupCounts.get(ownerId) || 0;
@@ -337,29 +275,23 @@ class PrembotManager {
             }
         });
     }
-
     checkRateLimit(userId, type) {
         const prembotData = this.prembots.get(userId);
         if (!prembotData) return { allowed: false };
-
         const now = Date.now();
         const oneMinAgo = now - 60000;
         const limit = type === 'commands'
             ? LIMITS.COMMANDS_PER_MINUTE
             : LIMITS.MESSAGES_PER_MINUTE;
-
         prembotData.rateLimit[type] = prembotData.rateLimit[type].filter(t => t > oneMinAgo);
-
         if (prembotData.rateLimit[type].length >= limit) {
             const oldestTimestamp = prembotData.rateLimit[type][0];
             const waitTime = 60000 - (now - oldestTimestamp);
             return { allowed: false, waitTime };
         }
-
         prembotData.rateLimit[type].push(now);
         return { allowed: true };
     }
-
     startBackupInterval(userId) {
         const prembotData = this.prembots.get(userId);
         if (!prembotData) return;
@@ -367,14 +299,12 @@ class PrembotManager {
             this.backupSession(userId);
         }, LIMITS.BACKUP_INTERVAL);
     }
-
     backupSession(userId) {
         const prembotData = this.prembots.get(userId);
         if (!prembotData) return;
         try {
             const backupDir = path.join(process.cwd(), 'prembots_backup', userId.split('@')[0]);
             fs.mkdirSync(backupDir, { recursive: true });
-
             const sessionFiles = ['creds.json', 'app-state-sync-key-*.json'];
             if (fs.existsSync(prembotData.sessionPath)) {
                 const files = fs.readdirSync(prembotData.sessionPath);
@@ -389,7 +319,6 @@ class PrembotManager {
             logger.error(`[Prembot] Backup error for ${userId}:`, error.message);
         }
     }
-
     stopPrembot(userId) {
         const prembotData = this.prembots.get(userId);
         if (!prembotData) {
@@ -399,7 +328,6 @@ class PrembotManager {
             }
             return { success: false, message: 'ꕢ No tienes un Prembot activo' };
         }
-
         try {
             if (prembotData.backupInterval) {
                 clearInterval(prembotData.backupInterval);
@@ -413,18 +341,14 @@ class PrembotManager {
             return { success: false, message: 'ꕢ Error al detener' };
         }
     }
-
     getPrembotStatus(userId) {
         const prembotData = this.prembots.get(userId);
         const tokenData = this.tokenService.getPrembot(userId);
-
         if (!prembotData && !tokenData) {
             return null;
         }
-
         const expiresAt = tokenData?.expiresAt || 0;
         const daysRemaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / (24 * 60 * 60 * 1000)));
-
         return {
             active: !!prembotData,
             userId,
@@ -438,11 +362,9 @@ class PrembotManager {
             banned: tokenData?.banned || false
         };
     }
-
     async loadSessions(mainSock) {
         const sessionsDir = path.join(process.cwd(), 'prembots');
         if (!fs.existsSync(sessionsDir)) return;
-
         const files = fs.readdirSync(sessionsDir);
         for (const file of files) {
             const userId = `${file}@s.whatsapp.net`;
@@ -458,19 +380,15 @@ class PrembotManager {
             }
         }
     }
-
     async restartSession(userId, mainSock, tokenId) {
         if (this.prembots.has(userId)) return;
-
         const cleanPhone = userId.split('@')[0];
         const sessionPath = path.join(process.cwd(), 'prembots', cleanPhone);
-
         try {
             const prembotUUID = uuidv4();
             const auth = new LocalAuth(prembotUUID, sessionPath);
             const account = { jid: '', pn: userId, name: '' };
             const prembotInstance = new Bot(prembotUUID, auth, account);
-
             prembotInstance.on('open', async (acc) => {
                 const prembotData = {
                     bot: prembotInstance,
@@ -483,36 +401,30 @@ class PrembotManager {
                     stats: { messages: 0, commands: 0 },
                     rateLimit: { commands: [], messages: [] }
                 };
-
                 this.prembots.set(userId, prembotData);
                 this.startBackupInterval(userId);
                 this.setupMessageHandler(prembotInstance, userId);
                 logger.info(`[Prembot] Session restored for ${cleanPhone}`);
             });
-
             prembotInstance.on('close', async (reason) => {
                 logger.info('[Prembot] Disconnected: ' + reason);
                 const reasonStr = String(reason).toLowerCase();
                 const isFatal = reasonStr.includes('401') || reasonStr.includes('403') || reasonStr.includes('428');
                 this.prembots.delete(userId);
-
                 if (!isFatal) {
                     logger.info(`[Prembot] Auto-reconnecting session for ${cleanPhone} in 5s...`);
                     setTimeout(() => this.restartSession(userId, mainSock, tokenId), 5000);
                 }
             });
-
             prembotInstance.on('error', (err) => {
                 logger.error('[Prembot] Error:', err);
             });
-
             logger.info(`[Prembot] Restarting login for: ${cleanPhone}`);
             await prembotInstance.login('qr');
         } catch (error) {
             logger.error(`[Prembot] Failed to restart session for ${userId}:`, error.message);
         }
     }
-
     getAllPrembots() {
         return Array.from(this.prembots.entries()).map(([userId, data]) => ({
             userId,
@@ -521,5 +433,4 @@ class PrembotManager {
         }));
     }
 }
-
 export default PrembotManager;

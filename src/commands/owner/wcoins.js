@@ -1,7 +1,7 @@
-import { isOwner, extractMentions, formatNumber, styleText } from '../../utils/helpers.js';
+import { isOwner, extractMentions, formatNumber, styleText, getCurrencyName } from '../../utils/helpers.js';
 
 export default {
-    commands: ['wcoins', 'addcoins', 'setcoins'],
+    commands: ['wcoins', 'addcoins',],
 
     async execute(ctx) {
         if (!isOwner(ctx.sender, global.botOwner)) {
@@ -66,11 +66,13 @@ export default {
 
         const targetNumber = targetUser.split('@')[0].split(':')[0];
 
+        const currencyName = await getCurrencyName(ctx);
+
         await ctx.reply(styleText(
             `ꕣ *Coins Añadidas*\n\n` +
             `> Usuario » @${targetNumber}\n` +
-            `> Cantidad » +¥${formatNumber(amount)}\n` +
-            `> Nuevo balance » ¥${formatNumber(newBalance)}`),
+            `> Cantidad » +¥${formatNumber(amount)} ${currencyName}\n` +
+            `> Nuevo balance » ¥${formatNumber(newBalance)} ${currencyName}`),
             { mentions: [targetUser] }
         );
     }

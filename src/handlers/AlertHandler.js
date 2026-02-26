@@ -13,12 +13,14 @@ export class AlertHandler {
         for (const participant of participants) {
             const participantId = typeof participant === 'string' ? participant : (participant.phoneNumber || participant.id);
             let message = '';
-            const makerNumber = maker?.split('@')[0]?.split(':')[0] || 'Desconocido';
-            const participantNumber = participantId?.split('@')[0]?.split(':')[0] || 'Desconocido';
-            if (action === 'promote') message = `> ⌞✦⌝ *@${makerNumber}* ha promovido a @${participantNumber}`;
-            else if (action === 'demote') message = `> ⌞✦⌝ *@${makerNumber}* ha quitado el admin a @${participantNumber}`;
+            const makerNumber = maker?.split('@')[0]?.split(':')[0];
+            const participantNumber = participantId?.split('@')[0]?.split(':')[0];
+            if (action === 'promote') message = `> ⌞✦⌝ *@${makerNumber || 'Desconocido'}* ha promovido a @${participantNumber || 'Desconocido'}`;
+            else if (action === 'demote') message = `> ⌞✦⌝ *@${makerNumber || 'Desconocido'}* ha quitado el admin a @${participantNumber || 'Desconocido'}`;
             else if (action === 'remove') {
-                if (maker && maker !== participantId) message = `> ⌞✦⌝ *@${makerNumber}* ha eliminado a *@${participantNumber}*`;
+                if (makerNumber && participantNumber && makerNumber !== participantNumber) {
+                    message = `> ⌞✦⌝ *@${makerNumber}* ha eliminado a *@${participantNumber}*`;
+                }
             }
             if (message) {
                 const mentions = [maker, participantId].filter(Boolean);

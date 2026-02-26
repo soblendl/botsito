@@ -32,12 +32,8 @@ const UserSchema = new mongoose.Schema({
     antirobo: { type: Number, default: 0 },
     desbloqueo: { type: Number, default: 0 }
 }, { strict: false });
-
-
-
 UserSchema.index({ 'economy.coins': -1 });
 UserSchema.index({ 'economy.bank': -1 });
 UserSchema.index({ 'level.xp': -1 });
 UserSchema.index({ createdAt: -1 });
-
 export default mongoose.models.User || mongoose.model('User', UserSchema);

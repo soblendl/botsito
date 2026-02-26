@@ -116,12 +116,23 @@ class DatabaseService {
     }
     async updateUser(userId, updates) {
         userCache.delete(userId);
+        if (userId.includes('@s.whatsapp.net')) {
+            const phoneNumber = userId.split('@')[0];
+            for (const key of userCache.keys()) {
+                if (key.startsWith(phoneNumber) && key.includes('@lid')) {
+                    userCache.delete(key);
+                }
+            }
+        }
+        if (userId.includes('@lid')) {
+            const phoneNumber = userId.split('@')[0].split(':')[0];
+            userCache.delete(`${phoneNumber}@s.whatsapp.net`);
+        }
         const result = await User.findOneAndUpdate(
             { id: userId },
             { $set: updates },
             { upsert: true, returnDocument: 'after' }
         ).lean();
-        userCache.set(userId, result);
         return result;
     }
     async getUserEconomyRank(userId) {
@@ -158,7 +169,8 @@ class DatabaseService {
                     antilink: false,
                     economy: true,
                     nsfw: false,
-                    alerts: false
+                    alerts: false,
+                    currencyName: 'coins'
                 },
                 alerts: [],
                 stats: { messages: 0 },
@@ -183,6 +195,20 @@ class DatabaseService {
     }
     async deleteUser(userId) {
         userCache.delete(userId);
+        if (userId.includes('@s.whatsapp.net')) {
+            const phoneNumber = userId.split('@')[0];
+            for (const key of userCache.keys()) {
+                if (key.startsWith(phoneNumber) && key.includes('@lid')) {
+                    userCache.delete(key);
+                }
+            }
+        }
+
+        if (userId.includes('@lid')) {
+            const phoneNumber = userId.split('@')[0].split(':')[0];
+            userCache.delete(`${phoneNumber}@s.whatsapp.net`);
+        }
+
         return User.deleteOne({ id: userId });
     }
     async deleteGroup(groupId) {
@@ -224,8 +250,6 @@ class DatabaseService {
                 .select('id name economy')
                 .lean()
                 .exec();
-
-            // Calculate total and sort
             const usersWithTotal = users.map(user => {
                 const coins = user.economy?.coins || 0;
                 const bank = user.economy?.bank || 0;
@@ -237,11 +261,7 @@ class DatabaseService {
                     total: coins + bank
                 };
             });
-
-            // Sort by total descending
             usersWithTotal.sort((a, b) => b.total - a.total);
-
-            // Return top N
             return usersWithTotal.slice(0, limit);
         } catch (error) {
             logger.error('[DatabaseService] Error getting top users:', error);

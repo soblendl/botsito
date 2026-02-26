@@ -8,7 +8,8 @@ const GroupSchema = new mongoose.Schema({
         antilink: { type: Boolean, default: false },
         economy: { type: Boolean, default: true },
         nsfw: { type: Boolean, default: false },
-        alerts: { type: Boolean, default: false }
+        alerts: { type: Boolean, default: false },
+        currencyName: { type: String, default: 'coins' }
     },
     alerts: { type: Array, default: [] },
     stats: {
@@ -16,10 +17,6 @@ const GroupSchema = new mongoose.Schema({
     },
     primaryBot: { type: String, default: null }
 }, { strict: false });
-
-
-
 GroupSchema.index({ 'settings.welcome': 1 });
 GroupSchema.index({ 'settings.alerts': 1 });
-
 export default mongoose.models.Group || mongoose.model('Group', GroupSchema);

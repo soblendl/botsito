@@ -1,4 +1,4 @@
-import { formatNumber, getCooldown, formatTime, getRandom, styleText } from '../../utils/helpers.js';
+import { formatNumber, getCooldown, formatTime, getRandom, styleText, getCurrencyName } from '../../utils/helpers.js';
 import { globalLogger as logger } from '../../utils/logger.js';
 
 const SLUT_JOBS = [
@@ -25,6 +25,7 @@ const SLUT_JOBS = [
 ];
 
 export default {
+    // Updated for currency system
     commands: ['slut', 'prostitute'],
     tags: ['economy'],
     help: ['slut'],
@@ -37,6 +38,7 @@ export default {
                 }
             }
 
+            const currencyName = await getCurrencyName(ctx);
             const userData = await ctx.dbService.getUser(ctx.sender);
             const lastSlut = userData?.economy?.lastSlut || 0;
             const COOLDOWN = 10 * 60 * 1000;
@@ -58,7 +60,7 @@ export default {
             const job = getRandom(SLUT_JOBS);
 
             await ctx.reply(styleText(
-                `ꕣ ${job} y ganaste *¥${formatNumber(REWARD)}* coins.`
+                `ꕣ ${job} y ganaste *¥${formatNumber(REWARD)}* ${currencyName}.`
             ));
 
         } catch (error) {

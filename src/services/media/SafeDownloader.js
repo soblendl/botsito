@@ -22,7 +22,7 @@ function cleanupTempFiles() {
         if (fs.existsSync(TEMP_DIR)) {
             const files = fs.readdirSync(TEMP_DIR);
             const now = Date.now();
-            const maxAge = 2 * 60 * 1000;
+            const maxAge = 3 * 60 * 1000;
             for (const file of files) {
                 const filePath = path.join(TEMP_DIR, file);
                 try {

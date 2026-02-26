@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { globalLogger as logger } from '../../utils/logger.js';
+import { CLUSTER_CONFIG } from '../../config/nodes.js';
 export class JadibotManager {
     constructor() {
         this.subbots = new Map();
@@ -20,6 +21,36 @@ export class JadibotManager {
         return code;
     }
     async startSubbot(code = null, chatId, mainSock, phoneNumber = null) {
+        if (global.db?.settings?.subbotsOpen === false) {
+            return { success: false, message: 'ꕢ El sistema de subbots está cerrado.\n\n> _Contacta al owner para más información_' };
+        }
+        const sessionLimit = global.db?.settings?.subbotSessionLimit;
+        if (sessionLimit) {
+            const totalSessions = global.nodeManager
+                ? global.nodeManager.getTotalSessions()
+                : this.subbots.size;
+            if (totalSessions >= sessionLimit) {
+                return { success: false, message: `ꕢ No hay espacios disponibles.\n\n> *Límite* » *${sessionLimit}*\n> *Activos* » *${totalSessions}*\n\n> _Contacta al owner para más información_` };
+            }
+        }
+        if (phoneNumber && global.nodeManager) {
+            const bestNode = global.nodeManager.getBestNode();
+            if (bestNode && !bestNode.local) {
+                logger.info(`[Jadibot] Routing to remote node: ${bestNode.id}`);
+                const result = await global.nodeManager.startRemoteSession(bestNode, phoneNumber);
+                if (result.success && result.otp) {
+                    const formatted = result.otp.match(/.{1,4}/g)?.join('-') || result.otp;
+                    await mainSock.sendMessage(chatId, {
+                        text: `𓆩❤︎𓆪 *Código de vinculación:*\n\n\`${formatted}\`\n\n*Servidor:* ${bestNode.id}\n\n*Pasos:*\n① » Abre WhatsApp en tu teléfono\n② » Dispositivos vinculados\n③ » Toca *"Vincular dispositivo"*\n④ » Elige *"Vincular con número de teléfono"*\n⑤ » Ingresa el código\n\n> _El código expira en 3 minutos_`
+                    });
+                    await mainSock.sendMessage(chatId, { text: result.otp });
+                    return { success: true, message: 'ꕢ Código enviado (nodo remoto)' };
+                }
+                if (!result.success) {
+                    logger.warn(`[Jadibot] Remote node ${bestNode.id} failed, trying local`);
+                }
+            }
+        }
         if (phoneNumber) { return await this.startWithPairingCode(chatId, mainSock, phoneNumber) }
         if (code) {
             return await this.startWithQR(code, chatId, mainSock);
@@ -284,8 +315,98 @@ export class JadibotManager {
     getSubbots() {
         return Array.from(this.subbots.entries()).map(([userId, data]) => ({
             userId,
-            chatId: data.chatId
+            chatId: data.chatId,
+            nodeId: CLUSTER_CONFIG.nodeId
         }));
+    }
+    async startSubbotRemote(phoneNumber) {
+        const cleanPhone = phoneNumber.replace(/[^0-9]/g, '');
+        const userId = `${cleanPhone}@s.whatsapp.net`;
+        if (this.subbots.has(userId)) {
+            return { success: false, message: 'ꕢ Ya tienes un sub-bot activo' };
+        }
+        if (this.pendingConnections.has(userId)) {
+            return { success: false, message: 'ꕢ Ya hay una conexión en proceso' };
+        }
+        this.pendingConnections.set(userId, { startTime: Date.now() });
+        try {
+            const sessionPath = path.join(process.cwd(), 'subbots', cleanPhone);
+            if (fs.existsSync(sessionPath)) {
+                fs.rmSync(sessionPath, { recursive: true, force: true });
+            }
+            fs.mkdirSync(sessionPath, { recursive: true });
+            const subbotUUID = uuidv4();
+            const auth = new LocalAuth(subbotUUID, sessionPath);
+            const account = { jid: '', pn: `${cleanPhone}@s.whatsapp.net`, name: '' };
+            const subbotInstance = new Bot(subbotUUID, auth, account);
+            return new Promise((resolve) => {
+                let isConnected = false;
+                let resolved = false;
+                const timeout = setTimeout(() => {
+                    if (!resolved) {
+                        resolved = true;
+                        this.pendingConnections.delete(userId);
+                        subbotInstance.disconnect?.();
+                        resolve({ success: false, message: 'ꕢ Tiempo agotado' });
+                    }
+                }, 90000);
+                subbotInstance.on('otp', (otpCode) => {
+                    if (!resolved) {
+                        resolved = true;
+                        logger.info(`[Jadibot-Worker] OTP received for ${cleanPhone}: ${otpCode}`);
+                        resolve({ success: true, otp: otpCode, nodeId: CLUSTER_CONFIG.nodeId });
+                    }
+                });
+                subbotInstance.on('open', async (acc) => {
+                    clearTimeout(timeout);
+                    isConnected = true;
+                    this.pendingConnections.delete(userId);
+                    this.subbots.set(userId, {
+                        bot: subbotInstance,
+                        chatId: null,
+                        sessionPath,
+                        uuid: subbotUUID
+                    });
+                    logger.info(`[Jadibot-Worker] Subbot connected: ${cleanPhone}`);
+                    subbotInstance.ws?.ev.on('messages.upsert', async ({ messages }) => {
+                        const m = messages[0];
+                        if (!m.message || m.key.fromMe) return;
+                        if (global.messageHandler) {
+                            await global.messageHandler.handleMessage(subbotInstance, m);
+                        }
+                    });
+                });
+                subbotInstance.on('close', (reason) => {
+                    clearTimeout(timeout);
+                    if (!isConnected) {
+                        this.pendingConnections.delete(userId);
+                        if (!resolved) { resolved = true; resolve({ success: false, message: 'ꕢ No se pudo conectar' }); }
+                    } else {
+                        const reasonStr = String(reason).toLowerCase();
+                        const isFatal = reasonStr.includes('401') || reasonStr.includes('403') || reasonStr.includes('428');
+                        this.subbots.delete(userId);
+                        if (!isFatal) {
+                            logger.info(`[Jadibot-Worker] Reconnecting ${cleanPhone} in 5s...`);
+                            setTimeout(() => this.restartSession(userId, null), 5000);
+                        }
+                    }
+                });
+                subbotInstance.on('error', (err) => {
+                    logger.error('[Jadibot-Worker] Error:', err);
+                });
+                logger.info(`[Jadibot-Worker] Starting OTP login for: ${cleanPhone}`);
+                subbotInstance.login('otp').catch(err => {
+                    if (!resolved) {
+                        resolved = true;
+                        this.pendingConnections.delete(userId);
+                        resolve({ success: false, message: 'ꕢ Error: ' + err.message });
+                    }
+                });
+            });
+        } catch (error) {
+            this.pendingConnections.delete(userId);
+            return { success: false, message: 'ꕢ Error: ' + error.message };
+        }
     }
 }
 export const jadibotManager = new JadibotManager();

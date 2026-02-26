@@ -1,8 +1,11 @@
-import { formatNumber, formatNumberLarge, extractMentions, styleText, getCooldown, formatTime } from '../../utils/helpers.js';
+import { formatNumber, formatNumberLarge, extractMentions, styleText, getCooldown, formatTime, getCurrencyName } from '../../utils/helpers.js';
 
 export default {
     commands: ['einfo'],
     async execute(ctx) {
+        console.log('🔍 [EINFO] ctx.sender:', ctx.sender);
+        console.log('🔍 [EINFO] ctx.senderLid:', ctx.senderLid);
+
         if (ctx.isGroup) {
             const groupData = await ctx.dbService.getGroup(ctx.chatId);
             if (!groupData?.settings?.economy) {
@@ -12,27 +15,35 @@ export default {
 
         const mentions = extractMentions(ctx);
         let target = mentions.length > 0 ? mentions[0] : ctx.sender;
+        let targetLid = target; // Guardar el original
 
-        
+        console.log('🔍 [EINFO] target inicial (antes de conversión):', target);
+
         if (target.includes('@lid')) {
-            
             if (target === ctx.senderLid && ctx.senderPhone) {
                 target = `${ctx.senderPhone}@s.whatsapp.net`;
             } else {
-                
-                const targetNumber = ctx.args[0]?.replace('@', '');
-                if (targetNumber && /^\d+$/.test(targetNumber)) {
-                    target = `${targetNumber}@s.whatsapp.net`;
+                const phoneNumber = target.split('@')[0].split(':')[0];
+                if (phoneNumber && /^\d+$/.test(phoneNumber)) {
+                    target = `${phoneNumber}@s.whatsapp.net`;
                 }
             }
         }
 
-        
         if (!target.includes('@s.whatsapp.net') && !target.includes('@lid')) {
             target = `${target}@s.whatsapp.net`;
         }
 
-        const userData = await ctx.dbService.getUser(target);
+        console.log('🔍 [EINFO] target después de conversión:', target);
+        console.log('🔍 [EINFO] targetLid:', targetLid);
+
+        // IMPORTANTE: Pasar ambos IDs a getUser
+        const userData = await ctx.dbService.getUser(target, targetLid);
+
+        console.log('🔍 [EINFO] userData.id:', userData?.id);
+        console.log('🔍 [EINFO] userData.economy.coins:', userData?.economy?.coins);
+        console.log('🔍 [EINFO] userData.economy.bank:', userData?.economy?.bank);
+
         if (!userData) {
             return await ctx.reply(styleText('ꕢ Usuario no encontrado en la base de datos.'));
         }
@@ -46,6 +57,7 @@ export default {
             slut: getCooldown(userData.economy?.lastSlut || 0, 10 * 60 * 1000),
             fish: getCooldown(userData.economy?.lastFish || 0, 30 * 1000)
         };
+        const currencyName = await getCurrencyName(ctx);
 
         let message = `╭─────── ୨୧ ───────╮\n`;
         message += `│ *ECONOMY INFO* \n`;
@@ -53,9 +65,9 @@ export default {
         message += `✿ *::* *Usuario* › @${target.split('@')[0]}\n\n`;
 
         message += `╭─── ⚐ Balance ───╮\n`;
-        message += `│ *Efectivo* › ${formatNumberLarge(userData.economy.coins || 0)}\n`;
-        message += `│ *Banco*    › ${formatNumberLarge(userData.economy.bank || 0)}\n`;
-        message += `│ *Total*    › ${formatNumberLarge(total)}\n`;
+        message += `│ *Efectivo* › ${formatNumberLarge(userData.economy.coins || 0)} ${currencyName}\n`;
+        message += `│ *Banco*    › ${formatNumberLarge(userData.economy.bank || 0)} ${currencyName}\n`;
+        message += `│ *Total*    › ${formatNumberLarge(total)} ${currencyName}\n`;
         message += `╰────────────────╯\n\n`;
 
         message += `╭─── ⚐ Cooldowns ───╮\n`;
@@ -66,6 +78,6 @@ export default {
         message += `│ *Fish*  › ${cooldowns.fish > 0 ? formatTime(cooldowns.fish) : '✔'}\n`;
         message += `╰────────────────╯`;
 
-        await ctx.reply(styleText(message), { mentions: [target] });
+        await ctx.reply(styleText(message), { mentions: [targetLid] });
     }
 };

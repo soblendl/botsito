@@ -113,6 +113,7 @@ export class Bot {
             logger.info('✿ EVENTO OPEN DISPARADO!');
             logger.info('✿ Conexión exitosa!');
             logger.info(`✿ Bot conectado » ${account.name || 'Shoko Nishimiya'}`);
+            global.mainBot = this.bot;
             logger.info('✿ Iniciando subbots y prembots guardados...');
             this.services.prembotManager.loadSessions(this.bot).catch(e => logger.error('Error loading prembots:', e));
             jadibotManager.loadSessions(this.bot).catch(e => logger.error('Error loading subbots:', e));
@@ -169,5 +170,28 @@ export class Bot {
         await this.loadCommands();
         await this.initializeBot();
         this.setupGracefulShutdown();
+    }
+    async initializeWorker() {
+        logger.info('ꕢ Inicializando en modo WORKER...');
+        await this.initializeServices();
+        await this.loadCommands();
+        const messageHandler = new MessageHandler(
+            this.services.dbService,
+            this.services.gachaService,
+            null,
+            null,
+            this.services.cacheManager,
+            this.services.shopService,
+            this.services.levelService,
+            this.services.economySeasonService
+        );
+        global.messageHandler = messageHandler;
+        const { CLUSTER_CONFIG } = await import('../config/nodes.js');
+        const { WorkerServer } = await import('../services/cluster/WorkerServer.js');
+        const worker = new WorkerServer();
+        await worker.start(CLUSTER_CONFIG.port);
+        jadibotManager.loadSessions(null).catch(e => logger.error('Error loading worker subbots:', e));
+        this.setupGracefulShutdown();
+        logger.info('ꕣ Worker inicializado exitosamente');
     }
 }

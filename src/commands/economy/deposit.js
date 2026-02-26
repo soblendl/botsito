@@ -1,5 +1,6 @@
-import { formatNumber, styleText } from '../../utils/helpers.js';
+import { formatNumber, styleText, getCurrencyName } from '../../utils/helpers.js';
 export default {
+    // Updated for currency system
     commands: ['deposit', 'dep', 'depositar', 'd'],
     async execute(ctx) {
         if (ctx.args.length === 0) {
@@ -19,11 +20,12 @@ export default {
         if ((economy.coins || 0) < amount) {
             return await ctx.reply(styleText('ꕢ No tienes suficientes coins en tu billetera.'));
         }
+        const currencyName = await getCurrencyName(ctx);
         ctx.dbService.updateUser(ctx.sender, {
             'economy.coins': (economy.coins || 0) - amount,
             'economy.bank': (economy.bank || 0) + amount
         });
         await ctx.dbService.save();
-        await ctx.reply(styleText(`ꕣ Depositaste *¥${formatNumber(amount)}* coins en el banco.`));
+        await ctx.reply(styleText(`ꕣ Depositaste *¥${formatNumber(amount)}* ${currencyName} en el banco.`));
     }
 };

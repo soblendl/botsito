@@ -15,7 +15,7 @@ export default {
         await ctx.reply(styleText('ꕢ Generando audio...'));
 
         try {
-            const API_KEY = 'sk_68ede0a29d2fab4f2e7b16db90aed4f749803e6189cf67f4';
+            const API_KEY = 'sk_3daf1763ae4a57b826d55d7d85734ca29a8938851cc0e704';
             const VOICE_ID = 'pNInz6obpgDQGcFmaJgB';
             const response = await axios({
                 method: 'post',

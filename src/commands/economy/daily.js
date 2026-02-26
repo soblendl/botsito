@@ -1,5 +1,6 @@
-import { formatNumber, getCooldown, formatTime, styleText } from '../../utils/helpers.js';
+import { formatNumber, getCooldown, formatTime, styleText, getCurrencyName } from '../../utils/helpers.js';
 export default {
+    // Updated for currency system
     commands: ['daily', 'diario'],
     tags: ['economy'],
     help: ['daily'],
@@ -10,6 +11,7 @@ export default {
                 return await ctx.reply(styleText('ꕢ El sistema de economía está desactivado en este grupo.'));
             }
         }
+        const currencyName = await getCurrencyName(ctx);
         const userData = await ctx.dbService.getUser(ctx.sender);
         const now = Date.now();
         const COOLDOWN = 24 * 60 * 60 * 1000;
@@ -34,7 +36,7 @@ export default {
         });
         let message = `ꕣ *RECOMPENSA DIARIA*\n\n`;
         message += `> Día » ¥${streak}\n`;
-        message += `> Recompensa » *¥${formatNumber(reward)}* coins\n`;
+        message += `> Recompensa » *¥${formatNumber(reward)}* ${currencyName}\n`;
         if (streak > 1) {
             message += `\n_¡Mantén la racha para ganar más!_`;
         } else if (lastDaily !== 0) {

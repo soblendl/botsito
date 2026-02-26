@@ -1,4 +1,4 @@
-import { styleText, formatNumberLarge, getName } from '../../utils/helpers.js';
+import { styleText, formatNumberLarge, getName, getCurrencyName } from '../../utils/helpers.js';
 import { globalLogger as logger } from '../../utils/logger.js';
 
 export default {
@@ -28,6 +28,7 @@ export default {
                     logger.warn('No se pudo obtener metadata del grupo para leaderboards:', e.message);
                 }
             }
+            const currencyName = await getCurrencyName(ctx);
 
             const usersWithNames = await Promise.all(leaderboard.map(async (user) => {
                 let displayName = user.name;
@@ -47,7 +48,7 @@ export default {
                             displayName = contact.notify || contact.name || contact.verifiedName || contact.pushname;
                         }
                     } catch (e) {
-                        
+
                     }
                 }
 
@@ -60,7 +61,7 @@ export default {
             usersWithNames.forEach((user, index) => {
                 const medal = index < 3 ? medals[index] : `${index + 1}.`;
                 message += `${medal} \`${user.displayName}\`\n`;
-                message += `> ⛃ Coins » *¥${formatNumberLarge(user.coins)}*\n\n`;
+                message += `> ⛃ Coins » *¥${formatNumberLarge(user.coins)}* ${currencyName}\n\n`;
             });
 
             const userRank = await economySeason.getUserRank(sender);
@@ -90,8 +91,8 @@ export default {
         let message = `ꕣ Temporada Actual: *${stats.name}*\n\n`;
         message += `> ⏰ Tiempo restante » *${timeMsg}*\n`;
         message += `> 👥 Participantes » *${stats.participants}*\n`;
-        message += `> 💰 Economía Total » *¥${formatNumberLarge(stats.totalCoins)}*\n`;
-        message += `> 📊 Promedio » *¥${formatNumberLarge(stats.averageCoins)}*\n`;
+        message += `> 💰 Economía Total » *¥${formatNumberLarge(stats.totalCoins)}* ${currencyName}\n`;
+        message += `> 📊 Promedio » *¥${formatNumberLarge(stats.averageCoins)}* ${currencyName}\n`;
 
         if (userRank.rank) {
             message += `\n🎯 Tu posición: #${userRank.rank}`;

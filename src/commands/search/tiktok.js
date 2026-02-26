@@ -15,35 +15,75 @@ export default {
         }
 
         try {
-            const apiUrl = `https://api.stellarwa.xyz/search/tiktok?query=${encodeURIComponent(text)}&key=stellar-CEpNm0hd`;
-            const response = await axios.get(apiUrl);
+            const crypto = (await import('crypto')).default;
+            const SECRET = 'h4rm0ny';
+            const BASE_URL = 'https://harmony.drexelxx.workers.dev/v1/tiktok-search';
+            const METHOD = 'GET';
+
+            // 1. Generate Timestamp
+            const timestamp = Math.floor(Date.now() / 1000);
+
+            // 2. Generate Signature
+            const urlWithQuery = `${BASE_URL}?q=${encodeURIComponent(text)}`;
+            const parsedUrl = new URL(urlWithQuery);
+            const pathAndQuery = parsedUrl.pathname + parsedUrl.search;
+            const dataToSign = `${METHOD}:${pathAndQuery}:${timestamp}`;
+
+            const signature = crypto.createHmac('sha256', SECRET)
+                .update(dataToSign)
+                .digest('hex');
+
+            const response = await axios.get(urlWithQuery, {
+                headers: {
+                    'x-timestamp': String(timestamp),
+                    'x-signature': signature
+                }
+            });
+
             const data = response.data;
 
-            if (!data || !data.status || !data.data || !Array.isArray(data.data) || data.data.length === 0) {
+            if (!data || !data.status || !data.results || !Array.isArray(data.results) || data.results.length === 0) {
                 return await reply(styleText('ꕢ No encontré videos para tu búsqueda.'));
             }
 
-            const videos = data.data.slice(0, 5);
+            const videos = data.results.slice(0, 5);
 
             for (const video of videos) {
                 const caption = `ꕣ *TikTok Video* \n\n` +
                     `> *Título* » ${video.title}\n` +
                     `> *Autor* » ${video.author.nickname} (@${video.author.unique_id})\n` +
-                    `> *Duración* » ${video.duration}\n` +
-                    `> *Vistas* » ${video.stats.views}\n` +
-                    `> *Likes* » ${video.stats.likes}\n` +
+                    `> *Duración* » ${video.duration}s\n` +
+                    `> *Vistas* » ${video.stats.play_count}\n` +
+                    `> *Likes* » ${video.stats.digg_count}\n` +
                     `──────────────────\n` +
                     `> _*Powered By DeltaByte*_`;
 
-                await conn.sendMessage(chatId, {
-                    video: { url: video.dl },
-                    caption: styleText(caption)
-                })
+                try {
+                    // Usar la URL 'play' que es la versión sin marca de agua o mejor calidad disponible
+                    const videoUrl = video.play || video.wmplay;
+
+                    const download = await global.SafeDownloader.safeMediaDownload(videoUrl, {
+                        maxSize: 50 * 1024 * 1024,
+                        timeout: 120000
+                    });
+
+                    if (download.success) {
+                        await conn.sendMessage(chatId, {
+                            video: { url: download.filePath },
+                            caption: styleText(caption)
+                        });
+                    } else {
+                        await reply(styleText(`ꕢ Error al descargar video: ${download.error}`));
+                    }
+                } catch (e) {
+                    logger.error('[TikTokSearch] Download error:', e);
+                }
+
                 await new Promise(resolve => setTimeout(resolve, 1000));
             }
         } catch (error) {
             logger.error('[TikTokSearch] Error:', error);
-            await reply(styleText('ꕢ Ocurrió un error al buscar videos.'));
+            await reply(styleText(`ꕢ Ocurrió un error al buscar videos: ${error.message}`));
         }
     }
 };

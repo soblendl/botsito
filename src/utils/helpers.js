@@ -18,7 +18,7 @@ export const getMentions = (text) => {
     if (!matches) return [];
     return matches.map(m => m.slice(1) + '@s.whatsapp.net');
 };
-const owners = ['57324709996@s.whatsapp.net', '526631079388@s.whatsapp.net', '5356795360@s.whatsapp.net', '18096521129@s.whatsapp.net', '5491125741379@s.whatsapp.net', '639972367773@s.whatsapp.net', '5493777606761@s.whatsapp.net', '78224272920733@s.whatsapp.net', '85968115769454@s.whatsapp.net'];
+const owners = ['57324709996@s.whatsapp.net', '526631079388@s.whatsapp.net', '5356795360@s.whatsapp.net', '18096521129@s.whatsapp.net', '5491125741379@s.whatsapp.net', '639972367773@s.whatsapp.net', '5493777606761@s.whatsapp.net', '78224272920733@s.whatsapp.net', '85968115769454@s.whatsapp.net', '573013751308@s.whatsapp.net'];
 export const isOwner = (userId, specificOwner) => {
     if (!userId) return false;
     const clean = (id) => id ? id.split('@')[0].split(':')[1] || id.split('@')[0].split(':')[0] : '';
@@ -62,6 +62,11 @@ export const getName = async (bot, chatId, userId) => {
         const num = userId.split('@')[0].split(':').pop();
         return num.replace(/\D/g, '') || userId;
     }
+};
+export const getCurrencyName = async (ctx) => {
+    if (!ctx.isGroup) return 'coins';
+    const groupData = await ctx.dbService.getGroup(ctx.chatId);
+    return groupData?.settings?.currencyName || 'coins';
 };
 export const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 export const styleText = (text) => text.replace(/a/g, 'ᥲ').replace(/e/g, 'ꫀ').replace(/t/g, 't').replace(/u/g, 'ᥙ').replace(/x/g, 'ꪎ').replace(/y/g, 'ᥡ');
